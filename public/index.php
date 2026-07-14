@@ -7,7 +7,7 @@ use Admin\ResuMatch\Router;
 $router = new Router();
 
 $router->get('/', function () {
-    echo "Welcome to ResuMatch!";
+    require __DIR__ . '/../views/home.php';
 });
 
 $router->get('/about', function () {
