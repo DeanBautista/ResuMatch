@@ -45,7 +45,7 @@ $variants = [
 
 $style = $variants[$listVariant] ?? $variants['strengths'];
 ?>
-<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+<div class="h-full bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex flex-col">
     <p class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 <?= $style['headingIconColor'] ?>" viewBox="0 0 20 20" fill="currentColor">
             <?= $style['headingIcon'] ?>

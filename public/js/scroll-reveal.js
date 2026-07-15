@@ -25,7 +25,7 @@
     return;
   }
 
-  var reduceMotion = window.matchMedia(
+  let reduceMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
   ).matches;
 
@@ -33,23 +33,22 @@
   // the nth-child stagger delays in results-reveal.css kick in for its
   // children). Individual [data-reveal] elements not inside a group
   // reveal independently.
-  var groups = document.querySelectorAll("[data-reveal-group]");
-  var loneItems = document.querySelectorAll(
+  let groups = document.querySelectorAll("[data-reveal-group]");
+  let loneItems = document.querySelectorAll(
     "[data-reveal]:not([data-reveal-group] > [data-reveal])"
   );
 
-  var observerOptions = {
+    let observerOptions = {
     root: null,
-    rootMargin: "0px 0px -8% 0px", // trigger slightly before full entry
-    threshold: 0.15,
-  };
+    threshold: 0.01,
+    };
 
   function revealBarFill(el) {
     // Bars keep their true width in the inline style attribute (set by
     // PHP: style="width: 84%"). We stash it, zero it out until visible,
     // then restore it so the transition in CSS animates the real value.
     if (el.getAttribute("data-reveal") !== "bar-fill") return;
-    var target = el.style.width;
+    let target = el.style.width;
     if (target && !el.dataset.revealTarget) {
       el.dataset.revealTarget = target;
       el.style.width = "0%";
@@ -59,7 +58,7 @@
   function onIntersect(entries, observer) {
     entries.forEach(function (entry) {
       if (!entry.isIntersecting) return;
-      var el = entry.target;
+      let el = entry.target;
       el.classList.add("is-visible");
 
       // Restore bar-fill widths now that .is-visible triggers the
@@ -104,7 +103,7 @@
     return;
   }
 
-  var observer = new IntersectionObserver(onIntersect, observerOptions);
+  let observer = new IntersectionObserver(onIntersect, observerOptions);
 
   groups.forEach(function (el) {
     observer.observe(el);

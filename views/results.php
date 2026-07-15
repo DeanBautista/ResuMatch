@@ -243,8 +243,8 @@ $keywordHighPriorityThreshold = 3;
     </div>
 
     <!-- ================= STRENGTHS + GAPS ================= -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div data-reveal-group="insight-list">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+        <div class="h-full" data-reveal-group="insight-list">
             <?php
             $listVariant = 'strengths';
             $listHeading = 'Strengths';
@@ -253,7 +253,7 @@ $keywordHighPriorityThreshold = 3;
             ?>
         </div>
 
-        <div data-reveal-group="insight-list">
+        <div class="h-full" data-reveal-group="insight-list">
             <?php
             $listVariant = 'gaps';
             $listHeading = 'Gaps to Address';
