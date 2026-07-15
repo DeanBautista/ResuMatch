@@ -135,9 +135,20 @@
 </footer>
 
 <?php include 'partials/toast.php'; ?>
+<?php include 'partials/loading-overlay.php'; ?>
 
 <script src="/js/toast.js"></script>
 <script src="/js/dropzone-upload.js"></script>
+
+<!-- Resume text extraction (PDF.js + Mammoth.js) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.7.0/mammoth.browser.min.js"></script>
+<script src="/js/loading-overlay.js"></script>
+<script src="/js/resume-extract.js"></script>
 
 </body>
 </html>
