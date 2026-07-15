@@ -111,7 +111,7 @@ function skillPillClasses(string $category): string
             <?php else: ?>
                 <div class="flex flex-wrap gap-2">
                     <?php foreach ($skills['missingRequired'] as $skill): ?>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <?= skillPillClasses('missingRequired') ?>">
+                        <span data-reveal class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <?= skillPillClasses('missingRequired') ?>">
                             <?= htmlspecialchars($skill) ?>
                         </span>
                     <?php endforeach; ?>
@@ -129,7 +129,7 @@ function skillPillClasses(string $category): string
             <?php else: ?>
                 <div class="flex flex-wrap gap-2">
                     <?php foreach ($skills['matched'] as $skill): ?>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <?= skillPillClasses('matched') ?>">
+                        <span data-reveal class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <?= skillPillClasses('matched') ?>">
                             <?= htmlspecialchars($skill) ?>
                         </span>
                     <?php endforeach; ?>
@@ -147,7 +147,7 @@ function skillPillClasses(string $category): string
             <?php else: ?>
                 <div class="flex flex-wrap gap-2">
                     <?php foreach ($skills['missingPreferred'] as $skill): ?>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <?= skillPillClasses('missingPreferred') ?>">
+                        <span data-reveal class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <?= skillPillClasses('missingPreferred') ?>">
                             <?= htmlspecialchars($skill) ?>
                         </span>
                     <?php endforeach; ?>
@@ -167,7 +167,7 @@ function skillPillClasses(string $category): string
         <?php else: ?>
             <ul class="divide-y divide-gray-100">
                 <?php foreach ($keywordRows as $row): ?>
-                    <li class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4 py-3">
+                    <li data-reveal class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4 py-3">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="font-mono text-sm text-gray-900">
                                 <?= htmlspecialchars($row['keyword']) ?>

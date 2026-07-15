@@ -1,16 +1,23 @@
 <?php
+session_start();
 /**
  * /api/analyze.php
  *
  * Minimal backend endpoint that receives extracted resume text +
- * job description from the client and forwards them to Gemini.
- * The Gemini API key stays server-side only.
+ * job description from the client and forwards them to an LLM.
+ *
+ * Primary provider: Gemini (gemini-3.5-flash, pinned — not the
+ * "-latest" alias, so it can't silently repoint under us).
+ * Fallback provider: Groq (llama-3.3-70b-versatile), used automatically
+ * if Gemini returns a 429 (rate limit) or the request otherwise fails.
+ *
+ * Both API keys stay server-side only.
  *
  * Expects JSON POST body:
  *   { "resumeText": "...", "jobDescription": "...", "jobTitle": "...", "company": "..." }
  *
  * Returns JSON:
- *   { "ok": true, "raw": "<gemini text response>", "parsed": {...} }
+ *   { "ok": true, "provider": "gemini"|"groq", "raw": "...", "parsed": {...} }
  *   { "ok": false, "error": "..." }
  */
 require __DIR__ . '/../../vendor/autoload.php';
@@ -23,8 +30,6 @@ header('Content-Type: application/json');
 // --- CORS (same-origin by default; loosen only if you actually need it) ---
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
-
-$apiKey = $_ENV['GEMINI_API_KEY'] ?? getenv('GEMINI_API_KEY');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -51,24 +56,27 @@ if ($resumeText === '' || $jobDescription === '') {
     exit;
 }
 
-// Basic size guard so we don't blow past Gemini's context / rack up cost
-// on a bad request (e.g. someone accidentally sending a huge file).
-const MAX_CHARS = 50000;
+// Basic size guard so we don't blow past either provider's context/quota,
+// or rack up cost on a bad request (e.g. someone accidentally sending a
+// huge file). Lowered from 50,000 -> 10,000: real resumes/JDs are almost
+// always well under this, and it keeps a single request comfortably
+// inside Groq's tight 6,000 TPM free-tier budget when fallback fires.
+const MAX_CHARS = 10000;
 if (strlen($resumeText) > MAX_CHARS || strlen($jobDescription) > MAX_CHARS) {
     http_response_code(413);
-    echo json_encode(['ok' => false, 'error' => 'Input too large.']);
+    echo json_encode(['ok' => false, 'error' => 'Input too large. Please keep resume and job description under ' . MAX_CHARS . ' characters each.']);
     exit;
 }
 
-// --- API key: already loaded from .env near the top of this file ---
-if (!$apiKey) {
+// --- API keys ---
+$geminiKey = $_ENV['GEMINI_API_KEY'] ?? getenv('GEMINI_API_KEY');
+$groqKey   = $_ENV['GROQ_API_KEY']   ?? getenv('GROQ_API_KEY');
+
+if (!$geminiKey && !$groqKey) {
     http_response_code(500);
-    echo json_encode(['ok' => false, 'error' => 'Server misconfigured: GEMINI_API_KEY not set.']);
+    echo json_encode(['ok' => false, 'error' => 'Server misconfigured: no API keys set (GEMINI_API_KEY / GROQ_API_KEY).']);
     exit;
 }
-
-// --- Build the Gemini request ---
-$model = 'gemini-flash-latest'; // auto-tracks Google's current recommended fast model
 
 /**
  * The prompt below is intentionally long and structured. Two things matter
@@ -147,6 +155,15 @@ STRICT GROUND RULES
    generic resume advice.
 8. Output ONLY valid JSON. No markdown code fences, no commentary, no text
    before or after the JSON object.
+9. Formatting analysis: scan the RESUME text itself (not the JD) for signals
+   that could hurt ATS parsing — e.g. evidence of multi-column layout,
+   tables, headers/footers, images/icons standing in for text, unusual
+   section headers, missing contact info (no email or phone number
+   detected in the text), or excessive use of special characters/symbols.
+   Only flag what's actually inferable from the extracted text — e.g. if
+   text appears jumbled or out of logical order, that's evidence of a
+   multi-column layout; don't assume issues that plain extracted text
+   can't reveal.
 
 ============================================================
 OUTPUT JSON SHAPE (produce exactly this structure)
@@ -157,11 +174,10 @@ OUTPUT JSON SHAPE (produce exactly this structure)
   "summary": "<2-3 sentence plain-language take on overall fit>",
 
   "subScores": {
-    "skillsMatch": <integer 0-100>,
-    "experienceMatch": <integer 0-100>,
-    "keywordMatch": <integer 0-100>,
-    "educationMatch": <integer 0-100>,
-    "educationApplicable": <boolean>
+    "skills": <integer 0-100>,
+    "experience": <integer 0-100>,
+    "education": <integer 0-100>,
+    "keywords": <integer 0-100>,
   },
 
   "skills": {
@@ -194,10 +210,14 @@ OUTPUT JSON SHAPE (produce exactly this structure)
   },
 
   "strengths": [<string>, ...],
-  "weaknesses": [<string>, ...],
+  "gaps": [<string>, ...],
 
   "recommendations": [
     { "action": "<specific tactical instruction>", "section": "<resume section it applies to>" }
+  ],
+
+  "formattingIssues": [
+    { "message": "<specific, plain-language description of the issue>", "severity": "<warning|info>" }
   ]
 }
 
@@ -212,88 +232,208 @@ JOB DESCRIPTION:
 {$jobDescription}
 PROMPT;
 
-$payload = [
-    'contents' => [
-        [
-            'parts' => [
-                ['text' => $prompt],
+/**
+ * Calls Gemini's generateContent endpoint.
+ * Returns ['httpCode' => int, 'rawText' => string|null, 'error' => string|null]
+ */
+function callGemini(string $apiKey, string $prompt): array
+{
+    $model = 'gemini-3.5-flash'; // pinned explicitly — not the '-latest' alias,
+                                  // so this can't silently repoint to a different
+                                  // model (and a different quota tier) later.
+
+    $payload = [
+        'contents' => [
+            ['parts' => [['text' => $prompt]]],
+        ],
+        'generationConfig' => [
+            'response_mime_type' => 'application/json',
+            'temperature' => 0.2,
+        ],
+    ];
+
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'x-goog-api-key: ' . $apiKey,
+        ],
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT => 60, // was 30 — Gemini can genuinely take longer than
+                                // that on large structured-JSON responses.
+    ]);
+
+    $response  = curl_exec($ch);
+    $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlError) {
+        return ['httpCode' => 0, 'rawText' => null, 'error' => "Upstream request failed: {$curlError}"];
+    }
+
+    $data = json_decode($response, true);
+
+    if ($httpCode !== 200) {
+        $msg = $data['error']['message'] ?? "Gemini API returned HTTP {$httpCode}";
+        return ['httpCode' => $httpCode, 'rawText' => null, 'error' => $msg];
+    }
+
+    $rawText = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+
+    if ($rawText === null) {
+        return ['httpCode' => $httpCode, 'rawText' => null, 'error' => 'Unexpected Gemini response shape.'];
+    }
+
+    return ['httpCode' => $httpCode, 'rawText' => $rawText, 'error' => null];
+}
+
+/**
+ * Calls Groq's OpenAI-compatible chat completions endpoint as a fallback.
+ * Same prompt, same expected JSON-only output — the model is just asked
+ * explicitly (via a system message) to return raw JSON, since Groq's
+ * OpenAI-compatible API handles JSON mode slightly differently than Gemini.
+ * Returns ['httpCode' => int, 'rawText' => string|null, 'error' => string|null]
+ */
+function callGroq(string $apiKey, string $prompt): array
+{
+    $model = 'llama-3.3-70b-versatile'; // pinned, open-source, solid at structured JSON tasks
+
+    $payload = [
+        'model' => $model,
+        'messages' => [
+            [
+                'role' => 'system',
+                'content' => 'You output ONLY valid JSON. No markdown fences, no commentary, no text before or after the JSON object.',
+            ],
+            [
+                'role' => 'user',
+                'content' => $prompt,
             ],
         ],
-    ],
-    // Ask Gemini to return JSON directly — this is more reliable than
-    // relying on prompt instructions alone, and removes most need for the
-    // fence-stripping fallback below.
-    'generationConfig' => [
-        'response_mime_type' => 'application/json',
-        'temperature' => 0.2, // low temperature: consistent scoring, not creative writing
-    ],
-];
+        'temperature' => 0.2,
+        'response_format' => ['type' => 'json_object'],
+    ];
 
-$url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent";
+    $ch = curl_init('https://api.groq.com/openai/v1/chat/completions');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $apiKey,
+        ],
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_TIMEOUT => 60,
+    ]);
 
-$ch = curl_init($url);
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => true,
-    CURLOPT_HTTPHEADER => [
-        'Content-Type: application/json',
-        'x-goog-api-key: ' . $apiKey,
-    ],
-    CURLOPT_POSTFIELDS => json_encode($payload),
-    CURLOPT_TIMEOUT => 30,
-]);
+    $response  = curl_exec($ch);
+    $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
 
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$curlError = curl_error($ch);
-curl_close($ch);
+    if ($curlError) {
+        return ['httpCode' => 0, 'rawText' => null, 'error' => "Upstream request failed: {$curlError}"];
+    }
 
-if ($curlError) {
+    $data = json_decode($response, true);
+
+    if ($httpCode !== 200) {
+        $msg = $data['error']['message'] ?? "Groq API returned HTTP {$httpCode}";
+        return ['httpCode' => $httpCode, 'rawText' => null, 'error' => $msg];
+    }
+
+    $rawText = $data['choices'][0]['message']['content'] ?? null;
+
+    if ($rawText === null) {
+        return ['httpCode' => $httpCode, 'rawText' => null, 'error' => 'Unexpected Groq response shape.'];
+    }
+
+    return ['httpCode' => $httpCode, 'rawText' => $rawText, 'error' => null];
+}
+
+// --- Try Gemini first, fall back to Groq on rate limit / failure ---
+
+$provider = null;
+$result   = null;
+
+if ($geminiKey) {
+    $result = callGemini($geminiKey, $prompt);
+
+    if ($result['rawText'] !== null) {
+        $provider = 'gemini';
+    } else {
+        // Gemini failed. If it was a rate limit (429) or any other failure,
+        // and we have a Groq key configured, fall back automatically.
+        error_log('[analyze.php] Gemini failed (HTTP ' . $result['httpCode'] . '): ' . $result['error'] . ' — falling back to Groq if configured.');
+    }
+}
+
+if ($provider === null && $groqKey) {
+    $result = callGroq($groqKey, $prompt);
+    if ($result['rawText'] !== null) {
+        $provider = 'groq';
+    }
+}
+
+// Both providers failed (or only one was configured and it failed)
+if ($provider === null) {
+    $httpCode = $result['httpCode'] ?? 502;
+    $errorMsg = $result['error'] ?? 'Both Gemini and Groq failed or are unconfigured.';
+
+    // Surface rate-limit errors distinctly so the frontend can show a
+    // friendlier "please wait a moment" message instead of a raw dump.
+    if ($httpCode === 429) {
+        http_response_code(429);
+        echo json_encode([
+            'ok' => false,
+            'error' => 'The analysis service is busy right now (rate limit on both providers). Please wait a minute and try again.',
+            'retryable' => true,
+        ]);
+        exit;
+    }
+
     http_response_code(502);
-    echo json_encode(['ok' => false, 'error' => "Upstream request failed: {$curlError}"]);
+    echo json_encode(['ok' => false, 'error' => $errorMsg]);
     exit;
 }
 
-$data = json_decode($response, true);
-
-if ($httpCode !== 200) {
-    $msg = $data['error']['message'] ?? "Gemini API returned HTTP {$httpCode}";
-    http_response_code(502);
-    echo json_encode(['ok' => false, 'error' => $msg]);
-    exit;
-}
-
-// Gemini's response text lives at candidates[0].content.parts[0].text
-$rawText = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
-
-if ($rawText === null) {
-    http_response_code(502);
-    echo json_encode(['ok' => false, 'error' => 'Unexpected Gemini response shape.', 'debug' => $data]);
-    exit;
-}
+$rawText = $result['rawText'];
 
 // Try to parse the model's JSON reply so the client gets structured data.
-// Strip accidental ```json fences just in case the model adds them
-// (response_mime_type: application/json should prevent this, but this is
-// a cheap safety net for cases where it's ignored).
+// Strip accidental ```json fences just in case a model adds them despite
+// being told not to — cheap safety net either provider might need.
 $cleaned = preg_replace('/^```json\s*|\s*```$/m', '', trim($rawText));
 $parsed = json_decode($cleaned, true);
 
-// Defensive: if parsing failed, surface that clearly instead of silently
-// returning null to the client (which would otherwise look like a bug in
-// the frontend rather than an upstream formatting issue).
 if ($parsed === null && json_last_error() !== JSON_ERROR_NONE) {
     echo json_encode([
         'ok' => true,
+        'provider' => $provider,
         'raw' => $rawText,
         'parsed' => null,
-        'parseError' => 'Gemini response was not valid JSON: ' . json_last_error_msg(),
+        'parseError' => 'Model response was not valid JSON: ' . json_last_error_msg(),
     ]);
     exit;
 }
 
+if (is_array($parsed)) {
+    $parsed['jobTitle'] = $jobTitle;
+    $parsed['company']  = $company;
+}
+
+$_SESSION['last_analysis']    = $parsed;
+$_SESSION['last_analysis_at'] = time();
+
 echo json_encode([
     'ok' => true,
+    'provider' => $provider,
     'raw' => $rawText,
     'parsed' => $parsed,
 ]);

@@ -54,7 +54,7 @@ $style = $variants[$listVariant] ?? $variants['strengths'];
     </p>
     <ul class="space-y-2.5">
         <?php foreach ($listItems as $item): ?>
-            <li class="flex items-start gap-2 text-sm text-gray-700 leading-relaxed">
+            <li data-reveal class="flex items-start gap-2 text-sm text-gray-700 leading-relaxed">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0 mt-0.5 <?= $style['itemIconColor'] ?>" viewBox="0 0 20 20" fill="currentColor">
                     <?= $style['itemIcon'] ?>
                 </svg>

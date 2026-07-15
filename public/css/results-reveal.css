@@ -1,0 +1,204 @@
+/* ==========================================================================
+   Match AI — results page animations
+   Signature move carried over from home.php: pieces settle into place with
+   a soft rise + blur-clear, using the same --ease-out / --dur-* rhythm.
+   Difference here: nothing plays on page load. Every block is quiet until
+   it scrolls into view, then plays once — so a long results page doesn't
+   dump every animation in your face at once, it reveals as you read.
+
+   Pairs with js/scroll-reveal.js, which toggles .is-visible via
+   IntersectionObserver. Append this file after animations.css on
+   results.php only — selectors below are scoped to results.php's
+   structure and won't touch home.php.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Base reveal state — anything marked [data-reveal] starts hidden/offset
+   and rises in, reusing the exact same motion signature as home.php's
+   rise-in (translateY + blur clear), just re-triggered per element instead
+   of once on load.
+   -------------------------------------------------------------------------- */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(22px);
+  filter: blur(4px);
+  transition: opacity var(--dur-slow) var(--ease-out),
+              transform var(--dur-slow) var(--ease-out),
+              filter var(--dur-slow) var(--ease-out);
+  will-change: opacity, transform, filter;
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* Per-block stagger — same cascade feeling as home.php's feature cards,
+   but the delay is scoped to *within* a revealed group via nth-child,
+   not a global page-load timeline. Applied once a parent [data-reveal-group]
+   gets .is-visible. */
+
+[data-reveal-group] > [data-reveal] {
+  transition-delay: 0s;
+}
+
+[data-reveal-group].is-visible > [data-reveal]:nth-child(1) { transition-delay: 0.00s; }
+[data-reveal-group].is-visible > [data-reveal]:nth-child(2) { transition-delay: 0.08s; }
+[data-reveal-group].is-visible > [data-reveal]:nth-child(3) { transition-delay: 0.16s; }
+[data-reveal-group].is-visible > [data-reveal]:nth-child(4) { transition-delay: 0.24s; }
+[data-reveal-group].is-visible > [data-reveal]:nth-child(5) { transition-delay: 0.32s; }
+[data-reveal-group].is-visible > [data-reveal]:nth-child(6) { transition-delay: 0.40s; }
+
+/* Group itself also needs the base state, since a group can be a
+   [data-reveal] element too (its children ride on its own visibility). */
+[data-reveal-group] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity var(--dur-slow) var(--ease-out),
+              transform var(--dur-slow) var(--ease-out);
+}
+
+[data-reveal-group].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   Score card — signature "settle" lift, same feel as home.php's
+   main > section.bg-white card-settle, retriggered on scroll-into-view.
+   -------------------------------------------------------------------------- */
+
+[data-reveal="score-card"] {
+  transform: translateY(28px) scale(0.98);
+  transform-origin: center top;
+  transition: opacity var(--dur-slow) var(--ease-out),
+              transform var(--dur-slow) var(--ease-out),
+              box-shadow var(--dur-slow) var(--ease-out);
+}
+
+[data-reveal="score-card"].is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  box-shadow: 0 20px 40px -24px rgba(17, 24, 39, 0.12);
+}
+
+/* --------------------------------------------------------------------------
+   Match score number — counts a small "pop" into place once visible,
+   echoing the icon-pop treatment used for the dropzone file icon.
+   Pair with a numeric count-up in scroll-reveal.js if desired; the CSS
+   pop works standalone even without a JS count-up.
+   -------------------------------------------------------------------------- */
+
+[data-reveal="score-value"] {
+  display: inline-block;
+  transform: scale(0.7);
+  transition: opacity var(--dur-med) var(--ease-out),
+              transform var(--dur-med) var(--ease-out);
+  transition-delay: 0.15s;
+}
+
+[data-reveal="score-value"].is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* --------------------------------------------------------------------------
+   Breakdown bars — fill animates left-to-right once visible, instead of
+   being present at full width immediately. Bars use inline width (from
+   PHP, e.g. style="width: 84%") — we animate a --target-width custom
+   property so the true value is never lost, just revealed.
+   Usage: on the bar-fill element, keep style="width:<?= $value ?>%" AND
+   add data-reveal="bar-fill". JS reads the inline width, zeroes it, then
+   animates back up on intersect.
+   -------------------------------------------------------------------------- */
+
+[data-reveal="bar-fill"] {
+  transform: scaleX(0);
+transform-origin:left;
+transition: transform .9s var(--ease-out);
+}
+
+.is-visible [data-reveal="bar-fill"]{
+    transform: scaleX(1);
+}
+
+/* --------------------------------------------------------------------------
+   Strengths / gaps list rows — same idea as home.php's dropzone check row,
+   items draw in one after another.
+   -------------------------------------------------------------------------- */
+
+[data-reveal-group="insight-list"] > li[data-reveal] {
+  transform: translateX(-14px);
+}
+
+[data-reveal-group="insight-list"].is-visible > li[data-reveal].is-visible {
+  transform: translateX(0);
+}
+
+/* --------------------------------------------------------------------------
+   Skill chips / ATS keyword rows — soft pop-in, staggered tighter than the
+   default group stagger since there can be many of them.
+   -------------------------------------------------------------------------- */
+
+[data-reveal-group="skill-chips"] > [data-reveal] {
+  transform: translateY(10px) scale(0.94);
+}
+
+[data-reveal-group="skill-chips"].is-visible > [data-reveal].is-visible {
+  transform: translateY(0) scale(1);
+}
+
+[data-reveal-group="skill-chips"].is-visible > [data-reveal]:nth-child(n) {
+  transition-delay: calc(0.03s * var(--chip-index, 0));
+}
+
+/* --------------------------------------------------------------------------
+   Recommendations — numbered list, each row rises in with its index badge
+   settling a beat after the text, mirroring the icon-then-text stagger
+   used in home.php's dropzone filled state.
+   -------------------------------------------------------------------------- */
+
+[data-reveal-group="recommendations"] > [data-reveal] {
+  transform: translateY(16px);
+}
+
+[data-reveal-group="recommendations"] [data-reveal-child="badge"] {
+  opacity: 0;
+  transform: scale(0.6) rotate(-8deg);
+  transition: opacity var(--dur-fast) var(--ease-out) 0.1s,
+              transform var(--dur-fast) var(--ease-out) 0.1s;
+}
+
+[data-reveal-group="recommendations"] > [data-reveal].is-visible [data-reveal-child="badge"] {
+  opacity: 1;
+  transform: scale(1) rotate(0);
+}
+
+/* --------------------------------------------------------------------------
+   Formatting risk rows — a quiet slide, no bounce; these read as warnings,
+   not celebrations.
+   -------------------------------------------------------------------------- */
+
+[data-reveal-group="formatting-issues"] > [data-reveal] {
+  transform: translateY(8px);
+  filter: none; /* keep warning text crisp immediately, no blur haze */
+}
+
+/* --------------------------------------------------------------------------
+   Accessibility — respect reduced motion, same rule as animations.css.
+   Elements simply appear in final state, no scroll-triggered motion.
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-reveal-group],
+  [data-reveal="score-card"],
+  [data-reveal="score-value"],
+  [data-reveal="bar-fill"] {
+    transition-duration: 0.001ms !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}

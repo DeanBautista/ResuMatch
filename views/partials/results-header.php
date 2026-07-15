@@ -10,11 +10,27 @@
  *   string $company
  *   string $checkedAt
  */
+
+// Fallback logic for the heading — handles all four combinations of
+// jobTitle/company being present or empty, since the raw "X @ Y" format
+// breaks visually (dangling "@") when either side is missing.
+$hasTitle   = trim((string) $jobTitle) !== '';
+$hasCompany = trim((string) $company) !== '';
+
+if ($hasTitle && $hasCompany) {
+    $headingText = htmlspecialchars($jobTitle) . ' @ ' . htmlspecialchars($company);
+} elseif ($hasTitle) {
+    $headingText = htmlspecialchars($jobTitle);
+} elseif ($hasCompany) {
+    $headingText = htmlspecialchars($company);
+} else {
+    $headingText = 'Match Results';
+}
 ?>
 <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6 sm:mb-8">
     <div>
         <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-            <?= htmlspecialchars($jobTitle) ?> @ <?= htmlspecialchars($company) ?>
+            <?= $headingText ?>
         </h1>
         <p class="mt-1 flex items-center gap-1.5 text-sm text-gray-500">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

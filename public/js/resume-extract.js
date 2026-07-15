@@ -4,8 +4,8 @@
  * Client-side text extraction for uploaded resumes (PDF or DOCX).
  * On "Analyze Match" click, this reads the uploaded file, extracts
  * plain text using PDF.js (for .pdf) or Mammoth.js (for .docx),
- * and stores the result on `window.MatchAI.resumeText` for you to
- * send to Gemini (or wherever) afterward.
+ * sends it to /api/analyze.php, and — on success — redirects to
+ * /results, which reads the analysis back out of the PHP session.
  *
  * Depends on:
  *   - pdf.js         (window.pdfjsLib)
@@ -20,8 +20,6 @@ window.MatchAI = window.MatchAI || {};
   "use strict";
 
   // Holds the most recently extracted resume text + metadata.
-  // Use this from your own Gemini-calling code, e.g.:
-  //   const { resumeText, jobDescription } = window.MatchAI;
   window.MatchAI.resumeText = "";
   window.MatchAI.resumeFileMeta = null;
   window.MatchAI.jobDescription = "";
@@ -79,7 +77,6 @@ window.MatchAI = window.MatchAI || {};
   }
 
   function showToast(message, type = "info") {
-    // Uses your existing toast.js if available, otherwise falls back to alert.
     if (typeof window.showToast === "function") {
       window.showToast(message, type);
     } else {
@@ -88,7 +85,6 @@ window.MatchAI = window.MatchAI || {};
     }
   }
 
-  // Small helper so fast phases are still perceivable (avoids a jarring flash).
   function wait(ms) {
     return new Promise((resolve) => window.setTimeout(resolve, ms));
   }
@@ -127,6 +123,10 @@ window.MatchAI = window.MatchAI || {};
     analyzeBtn.disabled = true;
     analyzeBtn.classList.add("opacity-70", "cursor-not-allowed");
 
+    // Tracks whether we're navigating away on success, so the `finally`
+    // block below doesn't re-enable/hide things after redirect has started.
+    let redirecting = false;
+
     try {
       // Phase 1/4 — Reading your resume…
       loading && loading.setPhase(0);
@@ -141,7 +141,6 @@ window.MatchAI = window.MatchAI || {};
         );
       }
 
-      // Store for later use (e.g. sending to Gemini)
       window.MatchAI.resumeText = text;
       window.MatchAI.jobDescription = jobDescription;
       window.MatchAI.resumeFileMeta = {
@@ -152,7 +151,6 @@ window.MatchAI = window.MatchAI || {};
         charCount: text.length,
       };
 
-      // Fire a custom event so other scripts (e.g. your Gemini call) can react
       document.dispatchEvent(
         new CustomEvent("resume:extracted", {
           detail: {
@@ -170,8 +168,7 @@ window.MatchAI = window.MatchAI || {};
       loading && loading.setPhase(1);
       await wait(500);
 
-      // Send extracted text to backend -> Gemini (phases 3 & 4 happen inside callAnalyze)
-      await callAnalyze(text, jobDescription);
+      redirecting = await callAnalyze(text, jobDescription);
     } catch (err) {
       console.error("[resume-extract] Extraction failed:", err);
       showToast(
@@ -180,16 +177,18 @@ window.MatchAI = window.MatchAI || {};
       );
       loading && loading.hide();
     } finally {
-      analyzeBtn.disabled = false;
-      analyzeBtn.classList.remove("opacity-70", "cursor-not-allowed");
+      if (!redirecting) {
+        analyzeBtn.disabled = false;
+        analyzeBtn.classList.remove("opacity-70", "cursor-not-allowed");
+      }
     }
   }
 
   analyzeBtn.addEventListener("click", handleAnalyzeClick);
 
   // ---- Backend call: sends extracted text to /api/analyze.php -> Gemini ----
-  // Result is stored on window.MatchAI.lastAnalysis and logged to console.
-  // Build your results UI off the `resume:analyzed` event or that variable.
+  // On success, redirects to /results (which reads the result back out of
+  // the PHP session). Returns true if a redirect was kicked off, false otherwise.
 
   async function callAnalyze(resumeText, jobDescription) {
     const loading = window.MatchAI.loading;
@@ -197,7 +196,7 @@ window.MatchAI = window.MatchAI || {};
     try {
       // Phase 3/4 — Comparing against the job description…
       loading && loading.setPhase(2);
-
+        console.log('im loading....')
       const res = await fetch("/api/analyze.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -217,18 +216,22 @@ window.MatchAI = window.MatchAI || {};
         await wait(600);
         console.log("[resume-extract] Analysis complete:", data);
         showToast("Analysis complete!", "success");
-      } else {
-        console.error("[resume-extract] Backend returned an error:", data.error);
-        showToast(`Backend error: ${data.error}`, "error");
+
+        // Hand off to the results page. analyze.php has already stored the
+        // parsed result in $_SESSION['last_analysis'] for it to render.
+        window.location.href = "/results";
+        return true;
       }
 
-      return data;
+      console.error("[resume-extract] Backend returned an error:", data.error);
+      showToast(`Backend error: ${data.error}`, "error");
+      loading && loading.hide();
+      return false;
     } catch (err) {
       console.error("[resume-extract] Analyze request failed:", err);
       showToast("Couldn't reach /api/analyze.php. Is the backend running?", "error");
-      return null;
-    } finally {
       loading && loading.hide();
+      return false;
     }
   }
 })();
