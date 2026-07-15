@@ -7,10 +7,10 @@
  * The Gemini API key stays server-side only.
  *
  * Expects JSON POST body:
- *   { "resumeText": "...", "jobDescription": "..." }
+ *   { "resumeText": "...", "jobDescription": "...", "jobTitle": "...", "company": "..." }
  *
  * Returns JSON:
- *   { "ok": true, "raw": "<gemini text response>" }
+ *   { "ok": true, "raw": "<gemini text response>", "parsed": {...} }
  *   { "ok": false, "error": "..." }
  */
 require __DIR__ . '/../../vendor/autoload.php';
@@ -40,8 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // --- Read + validate input ---
 $body = json_decode(file_get_contents('php://input'), true);
 
-$resumeText = trim($body['resumeText'] ?? '');
+$resumeText     = trim($body['resumeText'] ?? '');
 $jobDescription = trim($body['jobDescription'] ?? '');
+$jobTitle       = trim($body['jobTitle'] ?? '');
+$company        = trim($body['company'] ?? '');
 
 if ($resumeText === '' || $jobDescription === '') {
     http_response_code(400);
@@ -68,17 +70,140 @@ if (!$apiKey) {
 // --- Build the Gemini request ---
 $model = 'gemini-flash-latest'; // auto-tracks Google's current recommended fast model
 
+/**
+ * The prompt below is intentionally long and structured. Two things matter
+ * most for getting consistent, UI-ready output from an LLM doing this kind
+ * of evaluative task:
+ *
+ * 1. A scoring RUBRIC — without one, the model's 0-100 score is basically
+ *    vibes, and will drift wildly between calls on similar inputs. Giving it
+ *    explicit sub-scores + weights makes the number defensible and gives you
+ *    the "Score Breakdown Visualization" section for free.
+ *
+ * 2. Anti-hallucination rules — resume/JD matching is exactly the kind of
+ *    task where a model will confidently invent a "3 years of React" if the
+ *    resume merely mentions React once. We explicitly forbid inference of
+ *    years of experience or degrees that aren't stated.
+ */
 $prompt = <<<PROMPT
-You are an ATS resume-matching assistant. Compare the RESUME against the
-JOB DESCRIPTION below and respond ONLY with valid JSON (no markdown fences,
-no preamble) in this exact shape:
+You are an expert ATS (Applicant Tracking System) analyst and technical
+recruiter with 15 years of experience screening resumes against job
+descriptions. Analyze the RESUME against the JOB DESCRIPTION below with the
+same rigor a hiring manager would use, but grounded strictly in what is
+textually present in each document — never invent or infer facts that are
+not stated.
 
+============================================================
+SCORING RUBRIC (use this to compute matchScore and subScores)
+============================================================
+Compute four sub-scores (0-100 each), then combine them into the overall
+matchScore using these weights:
+  - skillsMatch      (weight 40%): proportion of required + preferred skills
+    from the JD that appear in the resume (required skills count more).
+  - experienceMatch   (weight 25%): how well the candidate's years of
+    experience and role history align with what the JD asks for.
+  - keywordMatch      (weight 20%): proportion of important ATS keywords/
+    phrases from the JD (tools, certifications, methodologies, domain terms)
+    that appear in the resume, verbatim or as close synonyms.
+  - educationMatch    (weight 15%): if the JD specifies a required or
+    preferred education level/field, how well the resume's stated education
+    satisfies it. If the JD does not mention education requirements at all,
+    set educationMatch to 100 and educationApplicable to false.
+
+matchScore = round(
+  skillsMatch*0.40 + experienceMatch*0.25 + keywordMatch*0.20 + educationMatch*0.15
+)
+
+Map matchScore to a verdict:
+  - 80-100 -> "Strong Match"
+  - 60-79  -> "Moderate Match"
+  - 40-59  -> "Weak Match"
+  - 0-39   -> "Poor Match"
+
+============================================================
+STRICT GROUND RULES
+============================================================
+1. Only use information explicitly present in RESUME and JOB DESCRIPTION.
+   Do not assume skills, tools, years of experience, or degrees that are not
+   stated or clearly implied by dates/titles actually written in the resume.
+2. For "years of experience": calculate detectedYears only from explicit
+   dates or explicit duration statements in the resume (e.g. "2019-2023" or
+   "5 years"). If dates are absent or ambiguous, set detectedYears to null
+   and note the ambiguity in experienceNotes — do not guess.
+3. Distinguish REQUIRED vs PREFERRED/NICE-TO-HAVE skills in the JD. Look for
+   explicit language ("required", "must have", "minimum qualifications" vs
+   "preferred", "nice to have", "bonus", "a plus"). If the JD does not make
+   this distinction, treat all listed skills as required.
+4. Keywords are not the same as skills: skills are competencies (e.g.
+   "project management"); ATS keywords include specific tools, certs,
+   acronyms, and repeated phrases the JD emphasizes (e.g. "PMP", "Agile",
+   "Salesforce", "SOC 2"). A term can appear in both lists if relevant.
+5. For each missing ATS keyword, note how many times the JD mentions it
+   (frequency) so the client can flag emphasis (e.g. mentioned 4x in JD).
+6. Recommendations must be specific and directly actionable — reference an
+   exact keyword, skill, or resume section. Never output vague advice like
+   "improve your resume" or "add more detail."
+7. Strengths and gaps must be specific to THIS resume/JD pairing, not
+   generic resume advice.
+8. Output ONLY valid JSON. No markdown code fences, no commentary, no text
+   before or after the JSON object.
+
+============================================================
+OUTPUT JSON SHAPE (produce exactly this structure)
+============================================================
 {
   "matchScore": <integer 0-100>,
-  "matchingKeywords": [<string>, ...],
-  "missingKeywords": [<string>, ...],
-  "summary": "<2-3 sentence plain-language summary>"
+  "verdict": "<Strong Match|Moderate Match|Weak Match|Poor Match>",
+  "summary": "<2-3 sentence plain-language take on overall fit>",
+
+  "subScores": {
+    "skillsMatch": <integer 0-100>,
+    "experienceMatch": <integer 0-100>,
+    "keywordMatch": <integer 0-100>,
+    "educationMatch": <integer 0-100>,
+    "educationApplicable": <boolean>
+  },
+
+  "skills": {
+    "matched": [<string>, ...],
+    "missingRequired": [<string>, ...],
+    "missingPreferred": [<string>, ...]
+  },
+
+  "atsKeywords": {
+    "missing": [
+      { "keyword": "<string>", "jdFrequency": <integer> }
+    ],
+    "underused": [
+      { "keyword": "<string>", "resumeCount": <integer>, "jdFrequency": <integer> }
+    ]
+  },
+
+  "experience": {
+    "requiredYears": <number or null>,
+    "detectedYears": <number or null>,
+    "experienceNotes": "<string, e.g. explanation if years could not be determined>",
+    "relevantHighlights": [<string>, ...],
+    "gaps": [<string>, ...]
+  },
+
+  "education": {
+    "required": "<string describing JD requirement, or null if none stated>",
+    "detected": "<string describing what resume states, or null if none stated>",
+    "meetsRequirement": <boolean or null>
+  },
+
+  "strengths": [<string>, ...],
+  "weaknesses": [<string>, ...],
+
+  "recommendations": [
+    { "action": "<specific tactical instruction>", "section": "<resume section it applies to>" }
+  ]
 }
+
+============================================================
+JOB TITLE (if provided): {$jobTitle}
+COMPANY (if provided): {$company}
 
 RESUME:
 {$resumeText}
@@ -94,6 +219,13 @@ $payload = [
                 ['text' => $prompt],
             ],
         ],
+    ],
+    // Ask Gemini to return JSON directly — this is more reliable than
+    // relying on prompt instructions alone, and removes most need for the
+    // fence-stripping fallback below.
+    'generationConfig' => [
+        'response_mime_type' => 'application/json',
+        'temperature' => 0.2, // low temperature: consistent scoring, not creative writing
     ],
 ];
 
@@ -141,12 +273,27 @@ if ($rawText === null) {
 }
 
 // Try to parse the model's JSON reply so the client gets structured data.
-// Strip accidental ```json fences just in case the model adds them.
+// Strip accidental ```json fences just in case the model adds them
+// (response_mime_type: application/json should prevent this, but this is
+// a cheap safety net for cases where it's ignored).
 $cleaned = preg_replace('/^```json\s*|\s*```$/m', '', trim($rawText));
 $parsed = json_decode($cleaned, true);
+
+// Defensive: if parsing failed, surface that clearly instead of silently
+// returning null to the client (which would otherwise look like a bug in
+// the frontend rather than an upstream formatting issue).
+if ($parsed === null && json_last_error() !== JSON_ERROR_NONE) {
+    echo json_encode([
+        'ok' => true,
+        'raw' => $rawText,
+        'parsed' => null,
+        'parseError' => 'Gemini response was not valid JSON: ' . json_last_error_msg(),
+    ]);
+    exit;
+}
 
 echo json_encode([
     'ok' => true,
     'raw' => $rawText,
-    'parsed' => $parsed, // null if it wasn't valid JSON — client can fall back to raw
+    'parsed' => $parsed,
 ]);
