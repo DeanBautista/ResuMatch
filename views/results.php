@@ -12,11 +12,12 @@
  * this boilerplate should be removed from here and from home.php and
  * replaced with includes of that shared layout instead.
  *
- * Content (title through Gaps card) is split into partials/ — see:
- *   partials/results-header.php     title, timestamp, re-run button
- *   partials/results-score-card.php match %, verdict badge, AI summary
- *   partials/results-breakdown.php  sub-score progress bars
- *   partials/insight-list.php       reusable strengths/gaps list card
+ * Content (title through Skills Breakdown card) is split into partials/ — see:
+ *   partials/results-header.php          title, timestamp, re-run button
+ *   partials/results-score-card.php      match %, verdict badge, AI summary
+ *   partials/results-breakdown.php       sub-score progress bars
+ *   partials/insight-list.php            reusable strengths/gaps list card
+ *   partials/results-skills-breakdown.php matched/missing skills + ATS keyword rows
  *
  * Data below is static/hardcoded but shaped to match exactly what
  * /api/analyze.php returns (see $data['parsed']), so the data section can
@@ -52,6 +53,27 @@ $gaps = [
     'No direct experience listed for <strong>Jira</strong> or tracking tools.',
 ];
 
+// Mirrors analyze.php's `skills` object exactly:
+//   skills.matched / skills.missingRequired / skills.missingPreferred
+$skills = [
+    'matched'          => ['Figma', 'Design Systems', 'Prototyping', 'UI Design'],
+    'missingRequired'  => ['Agile/Scrum', 'Jira', 'User Research'],
+    'missingPreferred' => ['React', 'Motion Design'],
+];
+
+// Mirrors analyze.php's `atsKeywords` object exactly:
+//   atsKeywords.missing[]   -> { keyword, jdFrequency }
+//   atsKeywords.underused[] -> { keyword, resumeCount, jdFrequency }
+$atsKeywords = [
+    'missing' => [
+        ['keyword' => 'Design Systems', 'jdFrequency' => 4],
+        ['keyword' => 'Accessibility',  'jdFrequency' => 2],
+    ],
+    'underused' => [
+        ['keyword' => 'Prototyping', 'resumeCount' => 1, 'jdFrequency' => 3],
+    ],
+];
+
 // ---------------------------------------------------------------------
 // DERIVED / CONDITIONAL LOGIC
 // ---------------------------------------------------------------------
@@ -82,6 +104,11 @@ $breakdownRows = [
     ['label' => 'Education',  'value' => $subScores['education']],
     ['label' => 'Keywords',   'value' => $subScores['keywords']],
 ];
+
+// jdFrequency at/above this = "HIGH PRIORITY" badge in the ATS keyword
+// list. Kept here (not inside the partial) so it's a single tunable knob
+// alongside the rest of the page's scoring config.
+$keywordHighPriorityThreshold = 3;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -122,6 +149,9 @@ $breakdownRows = [
         include 'partials/insight-list.php';
         ?>
     </div>
+
+    <!-- ================= SKILLS BREAKDOWN ================= -->
+    <?php include 'partials/results-skills-breakdown.php'; ?>
 
 </main>
 
