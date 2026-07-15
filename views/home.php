@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/animations.css">
 </head>
 <body class="min-h-screen bg-gradient-to-b from-[#dfe3ee] via-[#eee0e6] to-[#f5dfdd]">
 

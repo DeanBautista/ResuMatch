@@ -1,0 +1,456 @@
+/* ==========================================================================
+   Match AI — landing page animations
+   Signature move: pieces "matching" into place on load —
+   headline assembles word by word, the match card lifts and settles,
+   feature cards cascade in behind it. Everything else is quiet.
+   ========================================================================== */
+
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 0.2s;
+  --dur-med: 0.5s;
+  --dur-slow: 0.9s;
+}
+
+/* --------------------------------------------------------------------------
+   0. Background — slow ambient drift on the page gradient
+   -------------------------------------------------------------------------- */
+
+body {
+  background-size: 160% 160%;
+  animation: bg-drift 22s ease-in-out infinite;
+}
+
+@keyframes bg-drift {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 100% 60%; }
+  100% { background-position: 0% 0%; }
+}
+
+/* --------------------------------------------------------------------------
+   0.5 Load sequence — header
+   Logo and menu button drop in first, ahead of everything below it.
+   -------------------------------------------------------------------------- */
+
+header span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(-10px);
+  animation: header-in var(--dur-med) var(--ease-out) forwards;
+}
+
+header button[aria-label="Menu"] {
+  opacity: 0;
+  transform: translateY(-10px);
+  animation: header-in var(--dur-med) var(--ease-out) forwards;
+  animation-delay: 0.08s;
+  transition: background-color var(--dur-fast) var(--ease-soft),
+              transform var(--dur-fast) var(--ease-soft);
+  border-radius: 9999px;
+}
+
+@keyframes header-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Menu button hover/active feel */
+header button[aria-label="Menu"]:hover {
+  background-color: rgba(17, 24, 39, 0.05);
+}
+
+header button[aria-label="Menu"]:active {
+  transform: scale(0.92);
+}
+
+header button[aria-label="Menu"] svg {
+  transition: transform var(--dur-fast) var(--ease-soft);
+}
+
+header button[aria-label="Menu"]:hover svg {
+  animation: menu-squeeze 0.4s var(--ease-soft);
+}
+
+@keyframes menu-squeeze {
+  0%   { transform: scaleY(1); }
+  40%  { transform: scaleY(0.8); }
+  100% { transform: scaleY(1); }
+}
+
+/* Toggle this class from your menu-open JS to morph the icon into an X */
+header button[aria-label="Menu"].is-open svg {
+  transform: rotate(90deg);
+}
+
+/* --------------------------------------------------------------------------
+   1. Load sequence — hero
+   -------------------------------------------------------------------------- */
+
+main > section:first-of-type h1 {
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(18px);
+  animation: rise-in var(--dur-slow) var(--ease-out) forwards;
+  animation-delay: 0.18s;
+}
+
+main > section:first-of-type p {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: rise-in var(--dur-med) var(--ease-out) forwards;
+  animation-delay: 0.4s;
+}
+
+@keyframes rise-in {
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. Load sequence — the match card itself
+   Card lifts up out of the page and settles, like it just landed.
+   Its direct children stagger in right after, so the card never
+   feels empty mid-animation.
+   -------------------------------------------------------------------------- */
+
+main > section.bg-white {
+  opacity: 0;
+  transform: translateY(28px) scale(0.98);
+  animation: card-settle var(--dur-slow) var(--ease-out) forwards;
+  animation-delay: 0.42s;
+  transform-origin: center top;
+}
+
+@keyframes card-settle {
+  60% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.002);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    box-shadow: 0 20px 40px -24px rgba(17, 24, 39, 0.12);
+  }
+}
+
+main > section.bg-white > * {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: rise-in var(--dur-med) var(--ease-out) forwards;
+}
+
+main > section.bg-white > *:nth-child(1) { animation-delay: 0.62s; }
+main > section.bg-white > *:nth-child(2) { animation-delay: 0.70s; }
+main > section.bg-white > *:nth-child(3) { animation-delay: 0.80s; }
+
+/* Security note under the card */
+main > p.text-sm {
+  opacity: 0;
+  animation: rise-in var(--dur-med) var(--ease-out) forwards;
+  animation-delay: 0.95s;
+}
+
+main > p.text-sm svg {
+  animation: lock-settle 1.6s var(--ease-soft) 1.1s both;
+}
+
+@keyframes lock-settle {
+  0%   { transform: scale(0.7) rotate(-6deg); }
+  55%  { transform: scale(1.08) rotate(2deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+/* --------------------------------------------------------------------------
+   3. Load sequence — feature cards cascade
+   -------------------------------------------------------------------------- */
+
+main > section.mt-10 > div,
+main > section.mb-10 > div {
+  opacity: 0;
+  transform: translateY(22px);
+  animation: rise-in var(--dur-med) var(--ease-out) forwards;
+}
+
+main > section.mt-10 > div:nth-child(1) { animation-delay: 1.05s; }
+main > section.mt-10 > div:nth-child(2) { animation-delay: 1.15s; }
+main > section.mt-10 > div:nth-child(3) { animation-delay: 1.25s; }
+
+footer {
+  opacity: 0;
+  animation: rise-in var(--dur-med) var(--ease-out) forwards;
+  animation-delay: 1.4s;
+}
+
+/* --------------------------------------------------------------------------
+   4. Dropzone — empty state
+   -------------------------------------------------------------------------- */
+
+#dropzoneEmpty {
+  transition: border-color var(--dur-fast) var(--ease-soft),
+              background-color var(--dur-fast) var(--ease-soft),
+              transform var(--dur-fast) var(--ease-soft);
+}
+
+#dropzoneEmpty:hover {
+  transform: translateY(-2px);
+}
+
+#dropzoneEmpty:hover svg {
+  animation: arrow-hop 0.9s var(--ease-soft) infinite;
+}
+
+@keyframes arrow-hop {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+/* Drag-over state — toggle this class from dropzone-upload.js
+   on dragenter/dragover, remove on dragleave/drop */
+#dropzoneEmpty.drag-active {
+  border-color: #111827;
+  background-color: #f9fafb;
+  transform: scale(1.015);
+}
+
+#dropzoneEmpty.drag-active svg {
+  animation: arrow-hop 0.6s var(--ease-soft) infinite;
+}
+
+/* --------------------------------------------------------------------------
+   5. Dropzone — filled state
+   When #dropzoneFilled is un-hidden (class="hidden" removed / flex added),
+   it plays an entrance; the check row draws itself in right after.
+   -------------------------------------------------------------------------- */
+
+#dropzoneFilled:not(.hidden) {
+  animation: file-in var(--dur-med) var(--ease-out) both;
+}
+
+@keyframes file-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+#dropzoneFilled:not(.hidden) #fileIconWrapper {
+  animation: icon-pop 0.5s var(--ease-out) 0.08s both;
+}
+
+@keyframes icon-pop {
+  0%   { transform: scale(0.5) rotate(-8deg); opacity: 0; }
+  70%  { transform: scale(1.08) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+#dropzoneFilled:not(.hidden) #fileName,
+#dropzoneFilled:not(.hidden) #fileTypeLabel,
+#dropzoneFilled:not(.hidden) #fileSizeLabel {
+  animation: rise-in var(--dur-fast) var(--ease-out) 0.18s both;
+}
+
+/* the little green "File attached" checkmark row draws in last */
+#dropzoneFilled:not(.hidden) .text-green-600 {
+  opacity: 0;
+  animation: check-in var(--dur-fast) var(--ease-out) 0.3s forwards;
+}
+
+#dropzoneFilled:not(.hidden) .text-green-600 svg {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  animation: draw-check 0.4s var(--ease-out) 0.42s forwards;
+}
+
+@keyframes check-in {
+  to { opacity: 1; }
+}
+
+@keyframes draw-check {
+  to { stroke-dashoffset: 0; }
+}
+
+#removeFileBtn {
+  transition: transform var(--dur-fast) var(--ease-soft), color var(--dur-fast);
+}
+
+#removeFileBtn:hover {
+  transform: rotate(90deg);
+}
+
+/* --------------------------------------------------------------------------
+   6. Textarea — focus glow
+   -------------------------------------------------------------------------- */
+
+textarea {
+  transition: box-shadow var(--dur-fast) var(--ease-soft),
+              border-color var(--dur-fast) var(--ease-soft),
+              transform var(--dur-fast) var(--ease-soft);
+}
+
+textarea:focus {
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   7. Primary CTA — "Analyze Match" button
+   Shine sweep on hover, arrow nudges forward, subtle lift.
+   -------------------------------------------------------------------------- */
+
+main > section.bg-white > button {
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--dur-fast) var(--ease-soft),
+              box-shadow var(--dur-fast) var(--ease-soft);
+}
+
+main > section.bg-white > button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.16) 45%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.16) 55%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  transition: left 0.65s var(--ease-soft);
+  pointer-events: none;
+}
+
+main > section.bg-white > button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -12px rgba(17, 24, 39, 0.45);
+}
+
+main > section.bg-white > button:hover::before {
+  left: 130%;
+}
+
+main > section.bg-white > button:active {
+  transform: translateY(0);
+}
+
+main > section.bg-white > button svg {
+  transition: transform var(--dur-fast) var(--ease-soft);
+}
+
+main > section.bg-white > button:hover svg {
+  transform: translateX(4px);
+}
+
+/* --------------------------------------------------------------------------
+   8. Feature cards — hover lift + icon nudge
+   -------------------------------------------------------------------------- */
+
+main > section.mt-10 > div,
+main > section.mb-10 > div {
+  transition: transform var(--dur-fast) var(--ease-soft),
+              box-shadow var(--dur-fast) var(--ease-soft);
+}
+
+main > section.mt-10 > div:hover,
+main > section.mb-10 > div:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -20px rgba(17, 24, 39, 0.25);
+}
+
+main > section.mt-10 > div .rounded-full,
+main > section.mb-10 > div .rounded-full {
+  transition: transform var(--dur-fast) var(--ease-soft),
+              background-color var(--dur-fast) var(--ease-soft);
+}
+
+main > section.mt-10 > div:hover .rounded-full,
+main > section.mb-10 > div:hover .rounded-full {
+  transform: scale(1.1) rotate(-6deg);
+}
+
+/* --------------------------------------------------------------------------
+   9. Footer links
+   -------------------------------------------------------------------------- */
+
+footer nav a {
+  position: relative;
+  transition: color var(--dur-fast) var(--ease-soft);
+}
+
+footer nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform var(--dur-fast) var(--ease-soft);
+}
+
+footer nav a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* --------------------------------------------------------------------------
+   10. Toast (partials/toast.php) — slide-in support
+   Toggle a "show" class from toast.js to trigger; remove it to reverse.
+   Works whether the toast container uses translateY or translateX in markup.
+   -------------------------------------------------------------------------- */
+
+#toast,
+.toast {
+  transition: transform var(--dur-med) var(--ease-out),
+              opacity var(--dur-med) var(--ease-out);
+}
+
+#toast:not(.show):not(.hidden),
+.toast:not(.show) {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+#toast.show,
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   11. Accessibility — respect reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  body {
+    animation: none;
+  }
+
+  main > section.bg-white > button::before {
+    display: none;
+  }
+}
