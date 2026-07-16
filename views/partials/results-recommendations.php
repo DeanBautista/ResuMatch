@@ -47,7 +47,7 @@ function formattingIssueStyle(string $severity): array
     </h2>
 
     <!-- ============ NUMBERED RECOMMENDATIONS ============ -->
-    <div class="bg-white rounded-xl border border-gray-200/70 mb-4">
+    <div class="border border-gray-300 shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] bg-white rounded-xl mb-4">
         <?php if (empty($recommendations)): ?>
             <p class="text-sm text-gray-400 italic p-5">No specific recommendations generated.</p>
         <?php else: ?>
@@ -74,7 +74,7 @@ function formattingIssueStyle(string $severity): array
     </div>
 
     <!-- ============ FORMATTING & ATS-FRIENDLINESS ============ -->
-    <div class="bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5 mb-6">
+    <div class="border border-gray-300 shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] bg-white rounded-xl p-4 sm:p-5 mb-6">
         <h3 class="text-xs font-semibold tracking-wide text-gray-500 uppercase mb-3">
             Resume Formatting &amp; ATS-Friendliness
         </h3>
@@ -143,7 +143,7 @@ function formattingIssueStyle(string $severity): array
                 // inline "Copied" button state above is sufficient
                 // feedback on its own.
                 if (typeof window.showToast === 'function') {
-                    window.showToast('Recommendation copied to clipboard');
+                    window.showToast('Recommendation copied to clipboard', 'success');
                 }
             }
 

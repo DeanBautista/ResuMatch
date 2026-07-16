@@ -19,6 +19,7 @@ window.MatchAI = window.MatchAI || {};
   const barEl = document.getElementById("loadingBar");
   const phaseEl = document.getElementById("loadingPhase");
   const checkEl = overlay.querySelector(".checkmark-path");
+  const iconPathEl = document.getElementById("loadingIconPath");  
 
   const PHASES = [
     { label: "Reading your resume…", pct: 20 },
@@ -43,16 +44,19 @@ window.MatchAI = window.MatchAI || {};
     barEl.style.width = phase.pct + "%";
     phaseEl.textContent = `Phase ${phaseIndex + 1}/${PHASES.length}`;
 
-    if (phaseIndex === PHASES.length - 1 && checkEl) {
-      checkEl.classList.add("is-visible");
-    } else if (checkEl) {
-      checkEl.classList.remove("is-visible");
+    if (phaseIndex === PHASES.length - 1) {
+      checkEl && checkEl.classList.add("is-visible");
+      iconPathEl && iconPathEl.classList.add("is-hidden");
+    } else {
+      checkEl && checkEl.classList.remove("is-visible");
+      iconPathEl && iconPathEl.classList.remove("is-hidden");
     }
   }
 
   function show() {
     phaseIndex = 0;
     checkEl && checkEl.classList.remove("is-visible");
+    iconPathEl && iconPathEl.classList.remove("is-hidden");
     barEl.style.width = "0%";
     messageEl.textContent = PHASES[0].label;
     phaseEl.textContent = `Phase 1/${PHASES.length}`;

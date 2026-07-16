@@ -81,7 +81,7 @@ $educationApplicable = !empty($education['required']);
     <div class="grid grid-cols-1 lg:grid-cols-[calc(65%-1rem)_35%] gap-4">
 
         <!-- ============ EXPERIENCE CARD ============ -->
-        <div class="bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5">
+        <div class="border border-gray-300 shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] bg-white rounded-xl p-4 sm:p-5">
 
             <!-- Required -> Detected comparison strip -->
             <div class="bg-gray-50 rounded-lg px-4 py-5 sm:py-6 mb-5">
@@ -161,7 +161,7 @@ $educationApplicable = !empty($education['required']);
         </div>
 
         <!-- ============ EDUCATION MATCH CARD ============ -->
-        <div class="bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5">
+        <div class="border border-gray-300 shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] bg-white rounded-xl p-4 sm:p-5">
             <h3 class="text-xs font-semibold tracking-wide text-orange-600 uppercase mb-3">
                 Education Match
             </h3>

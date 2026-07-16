@@ -102,7 +102,7 @@ function skillPillClasses(string $category): string
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
 
         <!-- Missing Required Skills -->
-        <div class="bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5">
+        <div class="border border-gray-300 shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5">
             <h3 class="text-xs font-semibold tracking-wide text-red-600 uppercase mb-3">
                 Missing Required Skills
             </h3>
@@ -120,7 +120,7 @@ function skillPillClasses(string $category): string
         </div>
 
         <!-- Matched Skills -->
-        <div class="bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5">
+        <div class="border border-gray-300 shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5">
             <h3 class="text-xs font-semibold tracking-wide text-emerald-600 uppercase mb-3">
                 Matched Skills
             </h3>
@@ -138,7 +138,7 @@ function skillPillClasses(string $category): string
         </div>
 
         <!-- Missing Preferred Skills -->
-        <div class="bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5 sm:col-span-2 xl:col-span-1">
+        <div class="border border-gray-300 shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5 sm:col-span-2 xl:col-span-1">
             <h3 class="text-xs font-semibold tracking-wide text-amber-600 uppercase mb-3">
                 Missing Preferred Skills
             </h3>
@@ -157,7 +157,7 @@ function skillPillClasses(string $category): string
     </div>
 
     <!-- ============ ATS KEYWORD ANALYSIS ============ -->
-    <div class="bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5">
+    <div class="border border-gray-300 shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] bg-white rounded-xl border border-gray-200/70 p-4 sm:p-5">
         <h3 class="text-xs font-semibold tracking-wide text-gray-500 uppercase mb-3">
             ATS Keyword Analysis
         </h3>

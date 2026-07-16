@@ -7,7 +7,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/animations.css">
 </head>
-<body class="min-h-screen bg-gradient-to-b from-[#dfe3ee] via-[#eee0e6] to-[#f5dfdd]">
+<body class="min-h-screen bg-[radial-gradient(circle_at_15%_-10%,#cfe0fb_0%,transparent_45%),radial-gradient(circle_at_100%_0%,#e3edfd_0%,transparent_50%),linear-gradient(160deg,#dbeafe_0%,#eaf3fd_45%,#f3f8fe_100%)] bg-fixed">
 
 <?php include 'partials/header.php'; ?>
 
@@ -22,7 +22,7 @@
     </p>
   </section>
 
-  <section class="bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+  <section class="border border-gray-300 bg-white rounded-2xl shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] p-6 sm:p-8 lg:p-10 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
 
     <div id="dropzoneWrapper" class="relative h-48">
 
@@ -84,7 +84,7 @@
 
   <section class="mt-10 mb-10 lg:mt-16 lg:mb-16 space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
 
-    <div class="bg-white rounded-2xl shadow-sm p-6 lg:p-7 flex gap-4 lg:flex-col lg:gap-3">
+    <div class="border border-gray-300 bg-white rounded-2xl shadow-[0_2px_6px_rgba(30,64,175,0.05),0_8px_20px_rgba(30,64,175,0.08)] p-6 lg:p-7 flex gap-4 lg:flex-col lg:gap-3 hover:shadow-[0_4px_10px_rgba(30,64,175,0.08),0_14px_28px_rgba(30,64,175,0.12)] transition-shadow duration-300">
       <div class="shrink-0 w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
         <svg class="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9 8h1M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/>
@@ -96,7 +96,7 @@
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm p-6 lg:p-7 flex gap-4 lg:flex-col lg:gap-3">
+    <div class="border border-gray-300 bg-white rounded-2xl shadow-[0_2px_6px_rgba(30,64,175,0.05),0_8px_20px_rgba(30,64,175,0.08)] p-6 lg:p-7 flex gap-4 lg:flex-col lg:gap-3 hover:shadow-[0_4px_10px_rgba(30,64,175,0.08),0_14px_28px_rgba(30,64,175,0.12)] transition-shadow duration-300">
       <div class="shrink-0 w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
         <svg class="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"/>
@@ -108,7 +108,7 @@
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm p-6 lg:p-7 flex gap-4 lg:flex-col lg:gap-3">
+    <div class="border border-gray-300 bg-white rounded-2xl shadow-[0_2px_6px_rgba(30,64,175,0.05),0_8px_20px_rgba(30,64,175,0.08)] p-6 lg:p-7 flex gap-4 lg:flex-col lg:gap-3 hover:shadow-[0_4px_10px_rgba(30,64,175,0.08),0_14px_28px_rgba(30,64,175,0.12)] transition-shadow duration-300">
       <div class="shrink-0 w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
         <svg class="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>

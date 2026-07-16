@@ -10,11 +10,68 @@
  *   string $verdict        e.g. 'Strong Match'
  *   array  $verdictStyle   ['bg' => 'bg-lime-200', 'text' => 'text-lime-900']
  *   string $summary        may contain <strong> tags, must be pre-sanitized
+ *
+ * Animation: the ring fills from empty to $matchScore and the number
+ * counts up alongside it, driven by js/scroll-reveal.js the same way
+ * results-breakdown.php's bars are — the real stroke-dashoffset lives
+ * in the inline style attribute, scroll-reveal.js zeroes it out then
+ * restores it once the element is visible. See results-reveal.css
+ * additions required, noted below.
  */
+
+// Map the verdict's Tailwind bg class to a ring stroke color + soft track color.
+// Falls back to gray if a new/unmapped verdict color shows up.
+$ringColorMap = [
+    'lime'    => ['stroke' => '#65a30d', 'track' => '#ecfccb'], // strong match
+    'emerald' => ['stroke' => '#059669', 'track' => '#d1fae5'],
+    'green'   => ['stroke' => '#16a34a', 'track' => '#dcfce7'],
+    'amber'   => ['stroke' => '#d97706', 'track' => '#fef3c7'], // partial match
+    'yellow'  => ['stroke' => '#ca8a04', 'track' => '#fef9c3'],
+    'orange'  => ['stroke' => '#ea580c', 'track' => '#ffedd5'],
+    'red'     => ['stroke' => '#dc2626', 'track' => '#fee2e2'], // weak match
+    'gray'    => ['stroke' => '#6b7280', 'track' => '#f3f4f6'],
+];
+
+// Extract the color family name from something like "bg-lime-200"
+preg_match('/bg-([a-z]+)-\d+/', $verdictStyle['bg'], $m);
+$colorKey = $m[1] ?? 'gray';
+$ring = $ringColorMap[$colorKey] ?? $ringColorMap['gray'];
+
+// Ring geometry
+$radius = 54;
+$circumference = 2 * M_PI * $radius;
+$clampedScore = max(0, min(100, (int) $matchScore));
+$targetOffset = $circumference * (1 - $clampedScore / 100);
 ?>
-<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-7 h-full flex flex-col md:flex-row items-center text-center lg:items-start lg:text-left">
+<div class="border border-gray-300 shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-7 h-full flex flex-col md:flex-row items-center text-center lg:items-start lg:text-left">
     <div class="my-auto lg:mx-14 md:mx-8 flex flex-col items-center">
-        <div class="text-5xl font-bold text-gray-900"><?= (int) $matchScore ?><span class="text-xl align-top">%</span></div>
+
+        <div class="relative flex items-center justify-center" style="width:132px;height:132px;" data-reveal>
+            <svg width="132" height="132" viewBox="0 0 132 132" class="-rotate-90">
+                <circle
+                    cx="66" cy="66" r="<?= $radius ?>"
+                    fill="none"
+                    stroke="<?= $ring['track'] ?>"
+                    stroke-width="10"
+                />
+                <circle
+                    data-reveal="ring-fill"
+                    cx="66" cy="66" r="<?= $radius ?>"
+                    fill="none"
+                    stroke="<?= $ring['stroke'] ?>"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                    stroke-dasharray="<?= $circumference ?>"
+                    style="stroke-dashoffset: <?= $targetOffset ?>;"
+                />
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <div class="text-4xl font-bold text-gray-900">
+                    <span data-reveal="score-number" data-reveal-target="<?= $clampedScore ?>">0</span><span class="text-lg align-top">%</span>
+                </div>
+            </div>
+        </div>
+
         <span class="mt-3 inline-block whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide <?= $verdictStyle['bg'] ?> <?= $verdictStyle['text'] ?>">
             <?= htmlspecialchars($verdict) ?>
         </span>

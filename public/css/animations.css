@@ -496,6 +496,23 @@ footer nav a:hover::after {
   stroke-dashoffset: 0;
 }
 
+#loadingIconPath,
+.checkmark-path {
+    transition: opacity 0.25s ease;
+}
+
+#loadingIconPath.is-hidden {
+    opacity: 0;
+}
+
+.checkmark-path {
+    opacity: 0;
+}
+
+.checkmark-path.is-visible {
+    opacity: 1;
+}
+
 /* message fade between phases, toggled via JS */
 #loadingMessage.is-fading {
   opacity: 0;

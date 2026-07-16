@@ -11,7 +11,7 @@
  * independently based on its own value, not a fixed color per row.
  */
 ?>
-<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-7 h-full">
+<div class="border border-gray-300 shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-7 h-full">
     <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-5">Breakdown</p>
     <div class="space-y-5">
         <?php foreach ($breakdownRows as $row): ?>

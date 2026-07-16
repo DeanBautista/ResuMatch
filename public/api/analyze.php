@@ -264,14 +264,23 @@ function callGemini(string $apiKey, string $prompt): array
         ],
         CURLOPT_POSTFIELDS => json_encode($payload),
         CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_TIMEOUT => 60, // was 30 — Gemini can genuinely take longer than
+        CURLOPT_TIMEOUT => 20, // was 30 — Gemini can genuinely take longer than
                                 // that on large structured-JSON responses.
     ]);
 
     $response  = curl_exec($ch);
     $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
+    $curlErrno = curl_errno($ch);
     curl_close($ch);
+
+    if ($curlErrno === CURLE_OPERATION_TIMEDOUT) {
+    return [
+        'httpCode' => 408,
+        'rawText'  => null,
+        'error'    => 'Gemini request timed out.'
+    ];
+}
 
     if ($curlError) {
         return ['httpCode' => 0, 'rawText' => null, 'error' => "Upstream request failed: {$curlError}"];
@@ -330,13 +339,22 @@ function callGroq(string $apiKey, string $prompt): array
         ],
         CURLOPT_POSTFIELDS => json_encode($payload),
         CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_TIMEOUT => 60,
+        CURLOPT_TIMEOUT => 20,
     ]);
 
     $response  = curl_exec($ch);
     $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
+    $curlErrno = curl_errno($ch);
     curl_close($ch);
+
+    if ($curlErrno === CURLE_OPERATION_TIMEDOUT) {
+        return [
+            'httpCode' => 408,
+            'rawText'  => null,
+            'error'    => 'Gemini request timed out.'
+        ];
+    }
 
     if ($curlError) {
         return ['httpCode' => 0, 'rawText' => null, 'error' => "Upstream request failed: {$curlError}"];
@@ -376,6 +394,7 @@ if ($geminiKey) {
 }
 
 if ($provider === null && $groqKey) {
+    error_log('[AI Router] Switching AI agent: Gemini -> Groq');
     $result = callGroq($groqKey, $prompt);
     if ($result['rawText'] !== null) {
         $provider = 'groq';

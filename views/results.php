@@ -185,7 +185,7 @@ if ($live) {
 // Verdict badge color follows the same score bands used server-side in
 // analyze.php's rubric (80-100 Strong, 60-79 Moderate, 40-59 Weak, 0-39 Poor).
 $verdictStyles = [
-    'Strong Match'   => ['bg' => 'bg-lime-200', 'text' => 'text-lime-900'],
+    'Strong Match'   => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
     'Moderate Match' => ['bg' => 'bg-yellow-200', 'text' => 'text-yellow-900'],
     'Weak Match'     => ['bg' => 'bg-orange-200', 'text' => 'text-orange-900'],
     'Poor Match'     => ['bg' => 'bg-red-200', 'text' => 'text-red-900'],
@@ -197,7 +197,7 @@ $verdictStyle = $verdictStyles[$verdict] ?? $verdictStyles['Weak Match'];
 // needed" even though skills/experience/education are strong.
 function scoreBarColor(int $score): string
 {
-    if ($score >= 80) return 'bg-lime-500';
+    if ($score >= 80) return 'bg-green-500';
     if ($score >= 60) return 'bg-orange-400';
     return 'bg-red-500';
 }
@@ -224,7 +224,7 @@ $keywordHighPriorityThreshold = 3;
 <link rel="stylesheet" href="/css/animations.css">
 <link rel="stylesheet" href="/css/results-reveal.css">
 </head>
-<body class="min-h-screen bg-gradient-to-b from-[#dfe3ee] via-[#eee0e6] to-[#f5dfdd]">
+<body class="min-h-screen bg-[radial-gradient(circle_at_15%_-10%,#cfe0fb_0%,transparent_45%),radial-gradient(circle_at_100%_0%,#e3edfd_0%,transparent_50%),linear-gradient(160deg,#dbeafe_0%,#eaf3fd_45%,#f3f8fe_100%)] bg-fixed">
 
 <?php include 'partials/header.php'; ?>
 
