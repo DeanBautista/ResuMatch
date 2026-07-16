@@ -146,7 +146,7 @@
 <?php include 'partials/loading-overlay.php'; ?>
 
 <script src="/js/toast.js"></script>
-<script src="/js/dropzone-upload.js"></script>
+<script src="/js/home/dropzone-upload.js"></script>
 
 <!-- Resume text extraction (PDF.js + Mammoth.js) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -156,7 +156,7 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.7.0/mammoth.browser.min.js"></script>
 <script src="/js/loading-overlay.js"></script>
-<script src="/js/resume-extract.js"></script>
+<script src="/js/home/resume-extract.js"></script>
 
 </body>
 </html>
