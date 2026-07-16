@@ -48,7 +48,7 @@ if ($hasTitle && $hasCompany) {
             Analyze Another Resume
         </a>
 
-        <button type="button" class="shrink-0 inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 transition-colors">
+        <button id="rerunCheckBtn" type="button" class="shrink-0 inline-flex items-center justify-center gap-2 w-full sm:w-auto rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
         </svg>
@@ -56,3 +56,136 @@ if ($hasTitle && $hasCompany) {
         </button>
     </div>
 </div>
+
+<!-- partials/loading-overlay.php
+     Full-screen "Analyzing" loading state for Match AI.
+     Shown/hidden and driven entirely by js/resume-extract.js via #loadingOverlay.
+     Re-run check (below) also drives it, via the same #loadingOverlay/#loadingMessage/
+     #loadingBar/#loadingPhase elements, so both flows share one loading UI.
+-->
+<div id="loadingOverlay"
+     class="fixed inset-0 z-[999] hidden items-center justify-center bg-white/90 backdrop-blur-sm px-6"
+     role="status"
+     aria-live="polite"
+     aria-label="Analyzing resume">
+
+  <div class="w-full max-w-xs sm:max-w-sm flex flex-col items-center text-center">
+
+    <!-- Icon ring -->
+    <div class="relative w-28 h-28 sm:w-36 sm:h-36 mb-6 sm:mb-8 shrink-0">
+      <!-- soft pulsing halo -->
+      <span class="absolute inset-0 rounded-full bg-orange-100/60 animate-loading-pulse"></span>
+      <!-- static outer ring -->
+      <span class="absolute inset-0 rounded-full border border-gray-100"></span>
+      <!-- spinning progress ring -->
+      <svg class="absolute inset-0 w-full h-full -rotate-90 animate-loading-spin" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#fed7aa" stroke-width="2.5" stroke-dasharray="40 250" stroke-linecap="round" />
+      </svg>
+      <!-- icon -->
+      <div class="absolute inset-0 flex items-center justify-center">
+        <svg id="loadingIcon" class="w-9 h-9 sm:w-11 sm:h-11 text-gray-900" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path id="loadingIconPath" stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12h6m-6 4h6M9 8h1M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"
+                class="animate-loading-draw" />
+          <path class="checkmark-path opacity-0" stroke-linecap="round" stroke-linejoin="round" d="M8.5 12.5l2.4 2.4L16 9.6" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Message -->
+    <p id="loadingMessage" class="text-gray-600 text-base sm:text-lg font-medium tracking-tight min-h-[1.75rem] transition-opacity duration-300">
+      Reading your resume&hellip;
+    </p>
+
+    <!-- Progress bar -->
+    <div class="w-full max-w-[280px] sm:max-w-xs h-1.5 bg-gray-100 rounded-full mt-5 overflow-hidden">
+      <div id="loadingBar"
+           class="h-full w-0 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 transition-[width] duration-500 ease-out"></div>
+    </div>
+
+    <!-- Phase counter -->
+    <p id="loadingPhase" class="text-[11px] sm:text-xs tracking-[0.2em] text-gray-400 mt-4 font-medium uppercase">
+      Phase 1/4
+    </p>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  const rerunBtn = document.getElementById('rerunCheckBtn');
+  if (!rerunBtn) return;
+
+  const overlay      = document.getElementById('loadingOverlay');
+  const loadingMsg    = document.getElementById('loadingMessage');
+  const loadingBar     = document.getElementById('loadingBar');
+  const loadingPhase   = document.getElementById('loadingPhase');
+
+  function showOverlay() {
+    if (!overlay) return;
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+    if (loadingMsg) loadingMsg.textContent = 'Re-running your check\u2026';
+    if (loadingPhase) loadingPhase.textContent = 'Re-analyzing';
+    if (loadingBar) loadingBar.style.width = '20%';
+  }
+
+  function hideOverlay() {
+    if (!overlay) return;
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+    if (loadingBar) loadingBar.style.width = '0%';
+  }
+
+  function notify(message, isError) {
+    // Reuse the existing toast system if it's on the page (js/toast.js);
+    // fall back to a plain alert so the button still communicates
+    // failure/success even if toast.js isn't loaded on this view.
+    if (typeof window.showToast === 'function') {
+      window.showToast(message, isError ? 'error' : 'success');
+    } else {
+      alert(message);
+    }
+  }
+
+  rerunBtn.addEventListener('click', async function () {
+    rerunBtn.disabled = true;
+    showOverlay();
+
+    // Give the bar a little life while we wait on the request, since a
+    // single real LLM call has no natural incremental progress signal.
+    let fakeProgress = 20;
+    const progressTimer = setInterval(function () {
+      fakeProgress = Math.min(fakeProgress + 15, 90);
+      if (loadingBar) loadingBar.style.width = fakeProgress + '%';
+    }, 700);
+
+    try {
+      const res = await fetch('/api/rerun.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        clearInterval(progressTimer);
+        hideOverlay();
+        rerunBtn.disabled = false;
+        notify(data.error || 'Re-run failed. Please try again.', true);
+        return;
+      }
+
+      if (loadingBar) loadingBar.style.width = '100%';
+      // Analysis result is now stored in session by rerun.php — reload
+      // /results so results.php re-reads it from $_SESSION['last_analysis'].
+      window.location.href = '/results';
+    } catch (err) {
+      clearInterval(progressTimer);
+      hideOverlay();
+      rerunBtn.disabled = false;
+      notify('Network error while re-running the check. Please try again.', true);
+    }
+  });
+})();
+</script>
