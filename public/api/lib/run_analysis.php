@@ -22,14 +22,15 @@
 function runResumeAnalysis(string $resumeText, string $jobDescription, string $jobTitle, string $company): array
 {
     // --- API keys ---
-    $geminiKey = $_ENV['GEMINI_API_KEY'] ?? getenv('GEMINI_API_KEY');
-    $groqKey   = $_ENV['GROQ_API_KEY']   ?? getenv('GROQ_API_KEY');
+    $geminiKey       = $_ENV['GEMINI_API_KEY'] ?? getenv('GEMINI_API_KEY');
+    $groqKeyPrimary  = $_ENV['GROQ_API_KEY_PRIMARY']   ?? getenv('GROQ_API_KEY_PRIMARY');
+    $groqKeySecondary = $_ENV['GROQ_API_KEY_SECONDARY'] ?? getenv('GROQ_API_KEY_SECONDARY');
 
-    if (!$geminiKey && !$groqKey) {
+    if (!$geminiKey && !$groqKeyPrimary && !$groqKeySecondary) {
         return [
             'ok' => false,
             'httpStatus' => 500,
-            'body' => ['ok' => false, 'error' => 'Server misconfigured: no API keys set (GEMINI_API_KEY / GROQ_API_KEY).'],
+            'body' => ['ok' => false, 'error' => 'Server misconfigured: no API keys set (GEMINI_API_KEY / GROQ_API_KEY_PRIMARY / GROQ_API_KEY_SECONDARY).'],
         ];
     }
 
@@ -205,13 +206,21 @@ PROMPT;
     $provider = null;
     $result   = null;
 
-    if ($groqKey) {
-        $result = callGroq($groqKey, $prompt);
-
+    if ($groqKeyPrimary) {
+        $result = callGroq($groqKeyPrimary, $prompt);
         if ($result['rawText'] !== null) {
-            $provider = 'groq';
+            $provider = 'groq-primary';
         } else {
-            error_log('[run_analysis] Groq failed (HTTP ' . $result['httpCode'] . '): ' . $result['error'] . ' — falling back to Gemini if configured.');
+            error_log('[run_analysis] Groq primary failed (HTTP ' . $result['httpCode'] . '): ' . $result['error'] . ' — trying Groq secondary if configured.');
+        }
+    }
+
+    if ($provider === null && $groqKeySecondary) {
+        $result = callGroq($groqKeySecondary, $prompt);
+        if ($result['rawText'] !== null) {
+            $provider = 'groq-secondary';
+        } else {
+            error_log('[run_analysis] Groq secondary failed (HTTP ' . $result['httpCode'] . '): ' . $result['error'] . ' — falling back to Gemini if configured.');
         }
     }
 
@@ -223,10 +232,10 @@ PROMPT;
         }
     }
 
-    // Both providers failed (or only one was configured and it failed)
+    // All providers failed (or none configured)
     if ($provider === null) {
         $httpCode = $result['httpCode'] ?? 502;
-        $errorMsg = $result['error'] ?? 'Both Groq and Gemini failed or are unconfigured.';
+        $errorMsg = $result['error'] ?? 'All configured providers (Groq primary, Groq secondary, Gemini) failed.';
 
         if ($httpCode === 429) {
             return [
@@ -234,7 +243,7 @@ PROMPT;
                 'httpStatus' => 429,
                 'body' => [
                     'ok' => false,
-                    'error' => 'The analysis service is busy right now (rate limit on both providers). Please wait a minute and try again.',
+                    'error' => 'The analysis service is busy right now (rate limit on all providers). Please wait a minute and try again.',
                     'retryable' => true,
                 ],
             ];
@@ -247,6 +256,15 @@ PROMPT;
         ];
     }
 
+     // Log which provider/model actually served this request — useful for
+    // debugging fallback behavior and for confirming which AI is live.
+    $modelUsed = match ($provider) {
+        'groq-primary', 'groq-secondary' => 'llama-3.3-70b-versatile',
+        'gemini' => 'gemini-3.5-flash',
+        default => 'unknown',
+    };
+    error_log("[run_analysis] Request served by provider={$provider} model={$modelUsed}");
+    
     $rawText = $result['rawText'];
 
     // Strip accidental ```json fences just in case a model adds them despite
