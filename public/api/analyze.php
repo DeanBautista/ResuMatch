@@ -6,10 +6,11 @@ session_start();
  * Minimal backend endpoint that receives extracted resume text +
  * job description from the client and forwards them to an LLM.
  *
- * Primary provider: Gemini (gemini-3.5-flash, pinned — not the
- * "-latest" alias, so it can't silently repoint under us).
- * Fallback provider: Groq (llama-3.3-70b-versatile), used automatically
- * if Gemini returns a 429 (rate limit) or the request otherwise fails.
+ * Primary provider: Groq (llama-3.3-70b-versatile).
+ * Fallback provider: Gemini (gemini-3.5-flash, pinned — not the
+ * "-latest" alias, so it can't silently repoint under us), used
+ * automatically if Groq returns a 429 (rate limit) or the request
+ * otherwise fails.
  *
  * Both API keys stay server-side only.
  *
@@ -55,6 +56,8 @@ if ($resumeText === '' || $jobDescription === '') {
     echo json_encode(['ok' => false, 'error' => 'Missing resumeText or jobDescription.']);
     exit;
 }
+
+error_log("Job Description: " . $jobDescription);
 
 // Basic size guard so we don't blow past either provider's context/quota,
 // or rack up cost on a bad request (e.g. someone accidentally sending a
@@ -231,7 +234,6 @@ RESUME:
 JOB DESCRIPTION:
 {$jobDescription}
 PROMPT;
-
 /**
  * Calls Gemini's generateContent endpoint.
  * Returns ['httpCode' => int, 'rawText' => string|null, 'error' => string|null]
@@ -303,7 +305,7 @@ function callGemini(string $apiKey, string $prompt): array
 }
 
 /**
- * Calls Groq's OpenAI-compatible chat completions endpoint as a fallback.
+ * Calls Groq's OpenAI-compatible chat completions endpoint.
  * Same prompt, same expected JSON-only output — the model is just asked
  * explicitly (via a system message) to return raw JSON, since Groq's
  * OpenAI-compatible API handles JSON mode slightly differently than Gemini.
@@ -352,7 +354,7 @@ function callGroq(string $apiKey, string $prompt): array
         return [
             'httpCode' => 408,
             'rawText'  => null,
-            'error'    => 'Gemini request timed out.'
+            'error'    => 'Groq request timed out.'
         ];
     }
 
@@ -376,35 +378,35 @@ function callGroq(string $apiKey, string $prompt): array
     return ['httpCode' => $httpCode, 'rawText' => $rawText, 'error' => null];
 }
 
-// --- Try Gemini first, fall back to Groq on rate limit / failure ---
+// --- Try Groq first, fall back to Gemini on rate limit / failure ---
 
 $provider = null;
 $result   = null;
 
-if ($geminiKey) {
-    $result = callGemini($geminiKey, $prompt);
+if ($groqKey) {
+    $result = callGroq($groqKey, $prompt);
 
     if ($result['rawText'] !== null) {
-        $provider = 'gemini';
+        $provider = 'groq';
     } else {
-        // Gemini failed. If it was a rate limit (429) or any other failure,
-        // and we have a Groq key configured, fall back automatically.
-        error_log('[analyze.php] Gemini failed (HTTP ' . $result['httpCode'] . '): ' . $result['error'] . ' — falling back to Groq if configured.');
+        // Groq failed. If it was a rate limit (429) or any other failure,
+        // and we have a Gemini key configured, fall back automatically.
+        error_log('[analyze.php] Groq failed (HTTP ' . $result['httpCode'] . '): ' . $result['error'] . ' — falling back to Gemini if configured.');
     }
 }
 
-if ($provider === null && $groqKey) {
-    error_log('[AI Router] Switching AI agent: Gemini -> Groq');
-    $result = callGroq($groqKey, $prompt);
+if ($provider === null && $geminiKey) {
+    error_log('[AI Router] Switching AI agent: Groq -> Gemini');
+    $result = callGemini($geminiKey, $prompt);
     if ($result['rawText'] !== null) {
-        $provider = 'groq';
+        $provider = 'gemini';
     }
 }
 
 // Both providers failed (or only one was configured and it failed)
 if ($provider === null) {
     $httpCode = $result['httpCode'] ?? 502;
-    $errorMsg = $result['error'] ?? 'Both Gemini and Groq failed or are unconfigured.';
+    $errorMsg = $result['error'] ?? 'Both Groq and Gemini failed or are unconfigured.';
 
     // Surface rate-limit errors distinctly so the frontend can show a
     // friendlier "please wait a moment" message instead of a raw dump.

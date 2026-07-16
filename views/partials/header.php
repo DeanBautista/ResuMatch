@@ -1,10 +1,18 @@
+<?php
+$currentPath = $GLOBALS['currentPath'] ?? '';
+$isHome = $currentPath === '/';
+?>
 <header class="relative">
   <div class="max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto flex items-center justify-between px-6 lg:px-10 py-4">
-    <span class="text-xl font-semibold text-gray-900">Match</span>
+    <span class="text-xl font-semibold text-gray-900">ResuMatch</span>
 
     <!-- Desktop / tablet nav -->
     <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-700">
-      <a href="/new-check" class="hover:text-gray-900">New Check</a>
+      <a
+        href="/"
+        class="hover:text-gray-900 <?= $isHome ? 'text-gray-900 font-semibold' : '' ?>"
+        <?= $isHome ? 'aria-current="page"' : '' ?>
+      >New Check</a>
       <a href="/history" class="hover:text-gray-900">History</a>
     </nav>
 
@@ -28,19 +36,23 @@
     id="mobileMenu"
     class="md:hidden hidden flex-col px-6 pb-4 text-sm font-medium text-gray-700"
   >
-    <a href="/new-check" class="py-3 border-t border-gray-200/70">New Check</a>
+    <a
+      href="/"
+      class="py-3 border-t border-gray-200/70 <?= $isHome ? 'text-gray-900 font-semibold' : '' ?>"
+      <?= $isHome ? 'aria-current="page"' : '' ?>
+    >New Check</a>
     <a href="/history" class="py-3 border-t border-gray-200/70">History</a>
   </nav>
 </header>
 
 <script>
   (function () {
-    var toggle = document.getElementById('menuToggle');
-    var menu = document.getElementById('mobileMenu');
+    const toggle = document.getElementById('menuToggle');
+    const menu = document.getElementById('mobileMenu');
     if (!toggle || !menu) return;
 
     toggle.addEventListener('click', function () {
-      var isOpen = menu.classList.contains('open');
+      const isOpen = menu.classList.contains('open');
 
       if (isOpen) {
         menu.classList.remove('open');
