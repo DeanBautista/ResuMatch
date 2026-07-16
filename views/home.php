@@ -82,11 +82,17 @@
     Your data is processed securely and never shared with employers.
   </p>
 
+  <!-- 
+  Only the three feature-card icon wrappers changed.
+  Replace the corresponding block in your original file with this section.
+-->
+
   <section class="mt-10 mb-10 lg:mt-16 lg:mb-16 space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-6">
 
+    <!-- Skills & Keywords -->
     <div class="border border-gray-300 bg-white rounded-2xl shadow-[0_2px_6px_rgba(30,64,175,0.05),0_8px_20px_rgba(30,64,175,0.08)] p-6 lg:p-7 flex gap-4 lg:flex-col lg:gap-3 hover:shadow-[0_4px_10px_rgba(30,64,175,0.08),0_14px_28px_rgba(30,64,175,0.12)] transition-shadow duration-300">
-      <div class="shrink-0 w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-        <svg class="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <div class="shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+        <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9 8h1M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/>
         </svg>
       </div>
@@ -96,9 +102,10 @@
       </div>
     </div>
 
+    <!-- Experience & Education -->
     <div class="border border-gray-300 bg-white rounded-2xl shadow-[0_2px_6px_rgba(30,64,175,0.05),0_8px_20px_rgba(30,64,175,0.08)] p-6 lg:p-7 flex gap-4 lg:flex-col lg:gap-3 hover:shadow-[0_4px_10px_rgba(30,64,175,0.08),0_14px_28px_rgba(30,64,175,0.12)] transition-shadow duration-300">
-      <div class="shrink-0 w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-        <svg class="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <div class="shrink-0 w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+        <svg class="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 8l2 2 4-4"/>
         </svg>
       </div>
@@ -108,9 +115,10 @@
       </div>
     </div>
 
+    <!-- ATS Formatting -->
     <div class="border border-gray-300 bg-white rounded-2xl shadow-[0_2px_6px_rgba(30,64,175,0.05),0_8px_20px_rgba(30,64,175,0.08)] p-6 lg:p-7 flex gap-4 lg:flex-col lg:gap-3 hover:shadow-[0_4px_10px_rgba(30,64,175,0.08),0_14px_28px_rgba(30,64,175,0.12)] transition-shadow duration-300">
-      <div class="shrink-0 w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-        <svg class="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+      <div class="shrink-0 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+        <svg class="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
       </div>
