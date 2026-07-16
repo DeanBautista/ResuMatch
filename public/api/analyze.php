@@ -57,7 +57,23 @@ if ($resumeText === '' || $jobDescription === '') {
     exit;
 }
 
-error_log("Job Description: " . $jobDescription);
+// Minimum length guard: a real resume or job description is realistically
+// at least a few short paragraphs. Without this, trivial input like "sa"
+// or "test" still passes the empty-string check above and gets sent
+// straight to the LLM, which then has nothing to actually analyze and
+// will fabricate a full plausible-looking result (fake scores, fake
+// skills, fake gaps) rather than erroring out, since it's instructed to
+// always produce the full JSON shape. Reject too-short input here instead
+// of relying on the model to notice.
+const MIN_CHARS = 50;
+if (strlen($resumeText) < MIN_CHARS || strlen($jobDescription) < MIN_CHARS) {
+    http_response_code(400);
+    echo json_encode([
+        'ok' => false,
+        'error' => 'That doesn\'t look like a complete resume and job description. Please paste the full text of each (at least ' . MIN_CHARS . ' characters).',
+    ]);
+    exit;
+}
 
 // Basic size guard so we don't blow past either provider's context/quota,
 // or rack up cost on a bad request (e.g. someone accidentally sending a
@@ -105,7 +121,33 @@ textually present in each document — never invent or infer facts that are
 not stated.
 
 ============================================================
-SCORING RUBRIC (use this to compute matchScore and subScores)
+STEP 0 — INPUT VALIDITY GATE (check this BEFORE doing any scoring)
+============================================================
+Before applying the rubric below, check whether RESUME and JOB DESCRIPTION
+are actually a resume and a job description. Reasons input can be invalid:
+placeholder/test text (e.g. "sa", "test", "asdf"), text that is far too
+short or fragmentary to contain real qualifications or job requirements,
+random/gibberish text, or content that is clearly something else entirely
+(e.g. a recipe, a poem, an unrelated article).
+
+If EITHER field is invalid by these criteria:
+  - Set "isValidInput" to false.
+  - Set "invalidInputReason" to a short plain-language explanation of what's
+    wrong (e.g. "The resume field only contains a couple of characters and
+    has no identifiable work history, skills, or education.").
+  - Set matchScore to 0, verdict to "Poor Match", and every array field
+    ([...]) to an empty array. Do NOT invent scores, skills, strengths,
+    gaps, or recommendations for invalid input — leave subScores at 0 and
+    string fields (other than invalidInputReason) as null.
+  - Still output the full JSON shape below so the response is well-formed,
+    just with these placeholder/zeroed values.
+
+If BOTH fields are valid, real resume/JD content, set "isValidInput" to
+true, "invalidInputReason" to null, and proceed with the full rubric and
+ground rules below as normal.
+
+============================================================
+SCORING RUBRIC (use this to compute matchScore and subScores — only if isValidInput is true)
 ============================================================
 Compute four sub-scores (0-100 each), then combine them into the overall
 matchScore using these weights:
@@ -172,6 +214,9 @@ STRICT GROUND RULES
 OUTPUT JSON SHAPE (produce exactly this structure)
 ============================================================
 {
+  "isValidInput": <boolean — false if RESUME or JOB DESCRIPTION is not real, substantive content>,
+  "invalidInputReason": "<string explaining what's wrong, or null if isValidInput is true>",
+
   "matchScore": <integer 0-100>,
   "verdict": "<Strong Match|Moderate Match|Weak Match|Poor Match>",
   "summary": "<2-3 sentence plain-language take on overall fit>",
@@ -234,6 +279,7 @@ RESUME:
 JOB DESCRIPTION:
 {$jobDescription}
 PROMPT;
+
 /**
  * Calls Gemini's generateContent endpoint.
  * Returns ['httpCode' => int, 'rawText' => string|null, 'error' => string|null]
@@ -447,6 +493,22 @@ if ($parsed === null && json_last_error() !== JSON_ERROR_NONE) {
 if (is_array($parsed)) {
     $parsed['jobTitle'] = $jobTitle;
     $parsed['company']  = $company;
+}
+
+// If the model itself determined the resume/JD wasn't real, substantive
+// content (e.g. it slipped past our MIN_CHARS check but was still
+// gibberish/placeholder text), don't store it as a real analysis or let
+// the frontend render it as a normal 0%/Poor Match result — surface it as
+// a distinct, actionable error instead.
+if (is_array($parsed) && ($parsed['isValidInput'] ?? true) === false) {
+    $reason = $parsed['invalidInputReason'] ?? 'The resume or job description text did not look complete or valid.';
+    http_response_code(422);
+    echo json_encode([
+        'ok' => false,
+        'error' => $reason,
+        'invalidInput' => true,
+    ]);
+    exit;
 }
 
 $_SESSION['last_analysis']    = $parsed;
