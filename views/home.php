@@ -64,10 +64,11 @@
     </div>
 
     <textarea
+      id="jobDescriptionInput"
       class="w-full mt-5 lg:mt-0 border border-gray-300 rounded-lg p-4 text-sm text-gray-600 h-28 lg:h-48 resize-none focus:outline-none focus:ring-2 focus:ring-gray-800"
       placeholder="e.g. We are looking for a Senior Product Designer with 5+ years of experience..."></textarea>
 
-    <button class="w-full lg:w-auto lg:px-12 mt-5 lg:col-span-2 lg:mx-auto bg-gray-900 hover:bg-black text-white font-medium py-4 rounded-full flex items-center justify-center gap-2 transition">
+    <button id="analyzeMatchBtn" class="w-full lg:w-auto lg:px-12 mt-5 lg:col-span-2 lg:mx-auto bg-gray-900 hover:bg-black text-white font-medium py-4 rounded-full flex items-center justify-center gap-2 transition">
       Analyze Match
       <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>

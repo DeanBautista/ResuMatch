@@ -24,6 +24,9 @@ window.MatchAI = window.MatchAI || {};
   window.MatchAI.resumeFileMeta = null;
   window.MatchAI.jobDescription = "";
 
+  // Minimum required length for the pasted job description.
+  const MIN_JD_CHAR_COUNT = 50;
+
   // ---- DOM refs (match the IDs already in match.html) ----
   const analyzeBtn = document.querySelector("main button.bg-gray-900");
   const resumeInput = document.getElementById("resumeInput");
@@ -103,6 +106,13 @@ window.MatchAI = window.MatchAI || {};
     }
     if (!jobDescription) {
       showToast("Please paste the job description first.", "error");
+      return;
+    }
+    if (jobDescription.length < MIN_JD_CHAR_COUNT) {
+      showToast(
+        `Job description must be at least ${MIN_JD_CHAR_COUNT} characters. Currently: ${jobDescription.length} character${jobDescription.length === 1 ? "" : "s"}.`,
+        "error"
+      );
       return;
     }
 
@@ -224,7 +234,7 @@ window.MatchAI = window.MatchAI || {};
       }
 
       console.error("[resume-extract] Backend returned an error:", data.error);
-      showToast(`Backend error: ${data.error}`, "error");
+      showToast(`${data.error}`, "error");
       loading && loading.hide();
       return false;
     } catch (err) {
