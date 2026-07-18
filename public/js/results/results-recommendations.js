@@ -1,88 +1,119 @@
-(function () {
-    // --- Copy buttons -----------------------------------------------
-    // Generic: works for any number of recommendation rows without
-    // per-button wiring, since each button just reads its own
-    // data-copy-text attribute.
-    document.querySelectorAll('.js-copy-recommendation').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            let text = btn.getAttribute('data-copy-text') || '';
+/**
+ * js/results/results-recommendations.js
+ *
+ * Handles:
+ *   1. "Copy" button per recommendation row (existing behavior — kept
+ *      as-is, just documenting it here since this file already owned it).
+ *   2. "Export as PDF" button — fetches export-pdf.php via AJAX, turns
+ *      the response into a Blob, and triggers a browser download without
+ *      navigating away from results.php.
+ *   3. "Save to History" button — left as a stub / existing hook point,
+ *      not part of this change.
+ */
 
-            function onCopied() {
-                let original = btn.textContent;
-                btn.textContent = 'Copied';
-                btn.disabled = true;
-                setTimeout(function () {
-                    btn.textContent = original;
-                    btn.disabled = false;
-                }, 1500);
+document.addEventListener('DOMContentLoaded', () => {
+    initCopyButtons();
+    initExportPdfButton();
+});
 
-                // Use the app's existing toast system if it's on the page
-                // (see partials/toast.php / js/toast.js), otherwise the
-                // inline "Copied" button state above is sufficient
-                // feedback on its own.
-                if (typeof window.showToast === 'function') {
-                    window.showToast('Recommendation copied to clipboard', 'success');
-                }
-            }
+/**
+ * Wires up every ".js-copy-recommendation" button to copy its
+ * data-copy-text into the clipboard, with a small "Copied" state
+ * on the button itself for feedback.
+ */
+function initCopyButtons() {
+    const buttons = document.querySelectorAll('.js-copy-recommendation');
 
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(onCopied).catch(function () {
-                    fallbackCopy(text, onCopied);
-                });
-            } else {
-                fallbackCopy(text, onCopied);
+    buttons.forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const text = btn.dataset.copyText || '';
+
+            try {
+                await navigator.clipboard.writeText(text);
+                flashButtonState(btn, 'Copied');
+            } catch (err) {
+                console.error('Copy failed:', err);
+                flashButtonState(btn, 'Failed');
             }
         });
     });
+}
 
-    function fallbackCopy(text, done) {
-        let ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-            document.execCommand('copy');
-        } catch (e) {
-            // Silently ignore — button just won't flip to "Copied".
-        }
-        document.body.removeChild(ta);
-        done();
-    }
+function flashButtonState(btn, label) {
+    const original = btn.textContent;
+    btn.textContent = label;
+    btn.disabled = true;
 
-    // --- Save to History / Export as PDF -----------------------------
-    // These are stubbed as functional hooks: no backend endpoint for
-    // either exists yet (there's no /api/history.php or PDF export route
-    // in this codebase), so each dispatches a CustomEvent that a future
-    // handler can listen for, plus a clear TODO for the real fetch() call.
-    const saveBtn = document.getElementById('js-save-history');
-    if (saveBtn) {
-        saveBtn.addEventListener('click', function () {
-            // TODO: replace with a real request once a history endpoint
-            // exists, e.g.:
-            //   fetch('/api/history.php', {
-            //       method: 'POST',
-            //       headers: { 'Content-Type': 'application/json' },
-            //       body: JSON.stringify({ /* current result payload */ })
-            //   })
-            document.dispatchEvent(new CustomEvent('resumematch:save-history'));
-            if (typeof window.showToast === 'function') {
-                window.showToast('Saved to history');
-            }
-        });
-    }
+    setTimeout(() => {
+        btn.textContent = original;
+        btn.disabled = false;
+    }, 1500);
+}
 
+/**
+ * Wires up the "Export as PDF" button (#js-export-pdf) to call
+ * export-pdf.php via fetch, then convert the response into a Blob and
+ * trigger a download — no page navigation, no new tab.
+ */
+function initExportPdfButton() {
     const exportBtn = document.getElementById('js-export-pdf');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', function () {
-            // TODO: replace with a real request once a PDF export route
-            // exists (e.g. server-side render via a headless browser, or
-            // a client-side print stylesheet triggered via window.print()).
-            document.dispatchEvent(new CustomEvent('resumematch:export-pdf'));
-            if (typeof window.showToast === 'function') {
-                window.showToast('Preparing PDF export…');
+    if (!exportBtn) return;
+
+    exportBtn.addEventListener('click', async () => {
+        const originalLabel = exportBtn.textContent;
+        exportBtn.disabled = true;
+        exportBtn.textContent = 'Generating…';
+
+        try {
+            const response = await fetch('/export-pdf.php', {
+                method: 'GET',
+                // Ensures the session cookie is sent so export-pdf.php
+                // can read $_SESSION['last_analysis'] for *this* user.
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server responded with ${response.status}`);
             }
-        });
+
+            const blob = await response.blob();
+
+            // Pull filename from Content-Disposition if present, else fallback.
+            const disposition = response.headers.get('Content-Disposition') || '';
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            const filename = match ? match[1] : 'match-results.pdf';
+
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+
+            notifyExportResult('PDF downloaded successfully.');
+        } catch (err) {
+            console.error('PDF export failed:', err);
+            notifyExportResult('Could not generate PDF. Please try again.', 'error');
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.textContent = originalLabel;
+        }
+    });
+}
+
+/**
+ * Thin wrapper around the existing toast partial/JS (partials/toast.php +
+ * js/toast.js, both already included on results.php). Named distinctly
+ * from the project's own global `showToast` so this never shadows or
+ * recursively calls itself if both files declare a same-named function
+ * on window.
+ */
+function notifyExportResult(message, type = 'success') {
+    if (typeof window.showToast === 'function') {
+        window.showToast(message, type);
+    } else {
+        console.log(`[toast:${type}]`, message);
     }
-})();
+}

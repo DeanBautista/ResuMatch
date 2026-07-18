@@ -3,6 +3,10 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Admin\ResuMatch\Router;
+use Dotenv\Dotenv;
+
+$dotenv = Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->safeLoad();
 
 $router = new Router();
 
@@ -16,6 +20,10 @@ $router->get('/', function () {
 
 $router->get('/results', function () {
     require __DIR__ . '/../views/results.php';
+});
+
+$router->get('/signin', function () {
+    require __DIR__ . '/../views/signin.php';
 });
 
 $router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

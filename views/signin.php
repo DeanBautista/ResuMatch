@@ -49,12 +49,7 @@
     </p>
   </section>
 
-  <p class="text-center text-sm text-gray-600 mt-6">
-    New to Match AI?
-    <a href="/signup" class="font-medium text-gray-900 hover:underline underline-offset-2">Create an account</a>
-  </p>
-
-  <p class="text-center text-sm text-gray-600 mt-3 flex items-center justify-center gap-2">
+  <p class="text-center text-sm text-gray-600 mt-3 flex justify-center">
     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 10-8 0v4h8z"/>
     </svg>
@@ -68,6 +63,10 @@
 
 <script src="/js/toast.js"></script>
 <script src="/js/loading-overlay.js"></script>
+<script>
+  window.GOOGLE_CLIENT_ID = "<?= htmlspecialchars($_ENV['GOOGLE_CLIENT_ID'] ?? '', ENT_QUOTES) ?>";
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="/js/auth/google-oauth.js"></script>
 
 </body>
