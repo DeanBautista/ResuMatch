@@ -16,10 +16,23 @@ $GLOBALS['currentPath'] = $currentPath;
 // --- Auth guard ---------------------------------------------------------
 // Paths that require a logged-in user (i.e. $_SESSION['user_id'] set).
 // Anything in this list, when hit without auth, bounces back to '/'.
-// Checked with isProtectedPath() below so '/results/5' etc. also match.
+//
+// NOTE: '/results' (bare, no id) is intentionally NOT in this list —
+// guests can run a resume analysis without signing in, and analyze.php
+// redirects them straight to '/results' using session data. Only
+// '/results/{id}' (loading a specific saved row from match_history)
+// requires auth, since that's the only path that touches another user's
+// data. Checked via isPathOrChild() so '/results/5', '/results/12' etc.
+// all match without matching bare '/results'.
 $protectedPaths = [
     '/history',
-    '/results', // covers /results/{id} too — viewing a saved result requires login
+];
+
+// '/results/{id}' specifically requires auth (see note above) even though
+// bare '/results' does not — kept separate from $protectedPaths so the
+// bare path isn't accidentally swept in by a shared prefix rule.
+$protectedChildOnlyPaths = [
+    '/results',
 ];
 
 // All paths this app actually knows about. Anything NOT matched here
@@ -44,6 +57,15 @@ function isPathOrChild(string $base, string $path): bool
     return strpos($path, $base . '/') === 0 && substr_count($path, '/') === substr_count($base, '/') + 1;
 }
 
+/**
+ * True if $path is a single-segment CHILD of $base only (e.g. '/results/5'),
+ * NOT the bare $base itself (e.g. NOT '/results').
+ */
+function isChildOnly(string $base, string $path): bool
+{
+    return $path !== $base && isPathOrChild($base, $path);
+}
+
 $isLoggedIn = !empty($_SESSION['user_id']);
 
 $isProtected = false;
@@ -51,6 +73,14 @@ foreach ($protectedPaths as $protectedPath) {
     if (isPathOrChild($protectedPath, $currentPath)) {
         $isProtected = true;
         break;
+    }
+}
+if (!$isProtected) {
+    foreach ($protectedChildOnlyPaths as $protectedPath) {
+        if (isChildOnly($protectedPath, $currentPath)) {
+            $isProtected = true;
+            break;
+        }
     }
 }
 

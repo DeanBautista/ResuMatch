@@ -58,76 +58,7 @@
   </section>
 
   <!-- History list -->
-  <section id="historyList" class="space-y-4 pb-10 lg:pb-16">
-
-    <!-- Item -->
-    <a href="/results/1" class="history-item group border border-gray-300 bg-white rounded-2xl shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] hover:shadow-[0_4px_12px_rgba(30,64,175,0.10),0_16px_36px_rgba(30,64,175,0.14)] transition-shadow duration-300 p-5 sm:p-6 flex items-center gap-4 sm:gap-5"
-       data-title="senior product designer acme co" data-score="94" data-date="2">
-      <div class="shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-gray-200 flex items-center justify-center font-bold text-gray-900 text-sm sm:text-base">
-        94%
-      </div>
-      <div class="min-w-0 flex-1">
-        <p class="font-semibold text-gray-900 text-base sm:text-lg truncate">Senior Product Designer @ Acme Co.</p>
-        <p class="mt-1 text-sm text-gray-500 flex items-center gap-1.5 flex-wrap">
-          <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 shrink-0">
-            <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-            </svg>
-          </span>
-          <span class="text-green-700 font-medium">Strong Match</span>
-          <span class="text-gray-300">&middot;</span>
-          <span>Checked 2 days ago</span>
-        </p>
-      </div>
-      <svg class="w-5 h-5 text-gray-400 group-hover:text-gray-700 group-hover:translate-x-0.5 transition shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-      </svg>
-    </a>
-
-    <!-- Item -->
-    <a href="/results/2" class="history-item group border border-gray-300 bg-white rounded-2xl shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] hover:shadow-[0_4px_12px_rgba(30,64,175,0.10),0_16px_36px_rgba(30,64,175,0.14)] transition-shadow duration-300 p-5 sm:p-6 flex items-center gap-4 sm:gap-5"
-       data-title="ux researcher globaltech" data-score="72" data-date="5">
-      <div class="shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-gray-200 flex items-center justify-center font-bold text-gray-900 text-sm sm:text-base">
-        72%
-      </div>
-      <div class="min-w-0 flex-1">
-        <p class="font-semibold text-gray-900 text-base sm:text-lg truncate">UX Researcher @ GlobalTech</p>
-        <p class="mt-1 text-sm text-gray-500 flex items-center gap-1.5 flex-wrap">
-          <span class="text-amber-700 font-medium">Moderate Match</span>
-          <span class="text-gray-300">&middot;</span>
-          <span>Checked 5 days ago</span>
-        </p>
-      </div>
-      <svg class="w-5 h-5 text-gray-400 group-hover:text-gray-700 group-hover:translate-x-0.5 transition shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-      </svg>
-    </a>
-
-    <!-- Item -->
-    <a href="/results/3" class="history-item group border border-gray-300 bg-white rounded-2xl shadow-[0_2px_8px_rgba(30,64,175,0.06),0_12px_32px_rgba(30,64,175,0.10)] hover:shadow-[0_4px_12px_rgba(30,64,175,0.10),0_16px_36px_rgba(30,64,175,0.14)] transition-shadow duration-300 p-5 sm:p-6 flex items-center gap-4 sm:gap-5"
-       data-title="lead visual designer startup inc" data-score="88" data-date="7">
-      <div class="shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full border border-gray-200 flex items-center justify-center font-bold text-gray-900 text-sm sm:text-base">
-        88%
-      </div>
-      <div class="min-w-0 flex-1">
-        <p class="font-semibold text-gray-900 text-base sm:text-lg truncate">Lead Visual Designer @ Startup Inc.</p>
-        <p class="mt-1 text-sm text-gray-500 flex items-center gap-1.5 flex-wrap">
-          <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-100 shrink-0">
-            <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-            </svg>
-          </span>
-          <span class="text-green-700 font-medium">Strong Match</span>
-          <span class="text-gray-300">&middot;</span>
-          <span>Checked 1 week ago</span>
-        </p>
-      </div>
-      <svg class="w-5 h-5 text-gray-400 group-hover:text-gray-700 group-hover:translate-x-0.5 transition shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-      </svg>
-    </a>
-
-  </section>
+  <section id="historyList" class="space-y-4 pb-10 lg:pb-16"> </section>
 
   <!-- Empty state (hidden by default, shown via JS when search yields no results) -->
   <section id="historyEmptyState" class="hidden text-center py-16 lg:py-24">
