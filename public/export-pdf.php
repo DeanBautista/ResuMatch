@@ -48,7 +48,7 @@ use Dompdf\Options;
 $live = $_SESSION['last_analysis'] ?? null;
 
 if ($live) {
-    $jobTitle  = $live['jobTitle'] ?? 'This Role';
+    $jobTitle  = $live['jobTitle'] ?? '';
     $company   = $live['company'] ?? '';
     $checkedAt = 'Generated ' . date('M j, Y g:i A');
 

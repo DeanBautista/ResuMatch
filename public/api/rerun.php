@@ -1,5 +1,6 @@
     <?php
     session_start();
+    error_log("RERUN CALLED at " . time());
     /**
      * /api/rerun.php
      *

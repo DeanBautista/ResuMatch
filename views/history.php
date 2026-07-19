@@ -139,6 +139,23 @@
 
 </main>
 
+<!-- Delete confirmation modal -->
+<div id="deleteConfirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+  <div id="deleteConfirmBackdrop" class="absolute inset-0 bg-gray-900/40"></div>
+  <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+    <h2 class="text-lg font-semibold text-gray-900">Delete this check?</h2>
+    <p class="mt-2 text-sm text-gray-500">This can't be undone. The saved analysis will be permanently removed from your history.</p>
+    <div class="mt-6 flex justify-end gap-3">
+      <button type="button" id="deleteConfirmCancel" class="px-4 py-2 text-sm font-medium text-gray-700 rounded-full border border-gray-300 hover:bg-gray-50 transition">
+        Cancel
+      </button>
+      <button type="button" id="deleteConfirmAccept" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-full hover:bg-red-700 transition">
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+
 <footer class="border-t border-gray-200/60">
   <div class="max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-6 lg:px-10 py-6 text-center">
     <nav class="flex items-center justify-center gap-6 text-sm text-gray-700">

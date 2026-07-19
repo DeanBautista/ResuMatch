@@ -21,22 +21,127 @@
  *   partials/results-experience-education.php years comparison, highlights/gaps, education match
  *   partials/results-recommendations.php      numbered recommendations w/ copy, ATS formatting risks
  *
- * Data below is live when available: analyze.php stores its parsed Gemini
- * response in $_SESSION['last_analysis'] right before redirecting here, and
- * this file reads it back out. If nothing is in session (e.g. someone loads
- * /results directly without running an analysis first), it falls back to a
- * static/hardcoded example so the page still renders standalone.
+ * DATA SOURCES (checked in this order):
+ *   1. /results/{id} — $GLOBALS['routeParams']['id'] is set by index.php's
+ *      '/results/:id' route. Row is loaded from match_history, scoped to
+ *      the logged-in user (user_id must match session — see below). If the
+ *      row doesn't exist or isn't owned by the current user, redirect to
+ *      '/' (matches index.php's existing behavior for invalid access).
+ *   2. /results (no id) — $_SESSION['last_analysis'], set by
+ *      lib/run_analysis.php right before redirecting here from a fresh
+ *      analyze.php/rerun.php run. Unchanged from before.
+ *   3. Neither present — static/hardcoded fallback so the page still
+ *      renders standalone during development. Unchanged from before.
  */
 
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../public/api/lib/db.php';
+
 // ---------------------------------------------------------------------
-// DATA — live session data if present, else static fallback
+// DATA — DB row (by id) if present, else live session data, else static
+// fallback
 // ---------------------------------------------------------------------
-$live = $_SESSION['last_analysis'] ?? null;
+$routeId = $GLOBALS['routeParams']['id'] ?? null;
+$live    = null;
+
+if ($routeId !== null) {
+    // --- /results/{id} : load from match_history, scoped to owner ---
+    if (empty($_SESSION['user_id'])) {
+        // Shouldn't happen — index.php's guard already blocks unauthenticated
+        // access to /results — but fail safe rather than leak data.
+        header('Location: /');
+        exit;
+    }
+
+    if (!ctype_digit((string) $routeId)) {
+        header('Location: /');
+        exit;
+    }
+
+    try {
+        $pdo = getPDO();
+        $stmt = $pdo->prepare('SELECT * FROM match_history WHERE id = :id AND user_id = :user_id LIMIT 1');
+        $stmt->execute([
+            ':id'      => (int) $routeId,
+            ':user_id' => $_SESSION['user_id'],
+        ]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        error_log('[results] DB error loading id ' . $routeId . ': ' . $e->getMessage());
+        $row = false;
+    }
+
+    if (!$row) {
+        // Not found, or belongs to another user — redirect home, same as
+        // index.php's guard behavior for invalid/unauthorized access.
+        header('Location: /');
+        exit;
+    }
+
+    /**
+     * Small helper: reverse of save-history.php's toJsonColumn() — decode
+     * a JSON-typed column back into a PHP array, defaulting to [] for
+     * NULL/invalid values so downstream code can iterate safely.
+     */
+    $fromJsonColumn = function ($value): array {
+        if ($value === null) {
+            return [];
+        }
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : [];
+    };
+
+    // Reassemble the same shape run_analysis.php stores in
+    // $_SESSION['last_analysis'], from the flat DB columns, so the rest of
+    // this file and all partials work unmodified regardless of source.
+    $live = [
+        'jobTitle'   => $row['job_title'],
+        'company'    => $row['company'],
+        'matchScore' => $row['match_score'],
+        'verdict'    => $row['verdict'],
+        'summary'    => $row['summary'],
+        'subScores'  => [
+            'skills'     => $row['skills_score'],
+            'experience' => $row['experience_score'],
+            'education'  => $row['education_score'],
+            'keywords'   => $row['keywords_score'],
+        ],
+        'strengths' => $fromJsonColumn($row['strengths']),
+        'gaps'      => $fromJsonColumn($row['gaps']),
+        'skills'    => [
+            'matched'          => $fromJsonColumn($row['skills_matched']),
+            'missingRequired'  => $fromJsonColumn($row['skills_missing_required']),
+            'missingPreferred' => $fromJsonColumn($row['skills_missing_preferred']),
+        ],
+        'atsKeywords' => [
+            'missing'   => $fromJsonColumn($row['ats_keywords_missing']),
+            'underused' => $fromJsonColumn($row['ats_keywords_underused']),
+        ],
+        'experience' => [
+            'requiredYears'      => $row['required_years'],
+            'detectedYears'      => $row['detected_years'],
+            'experienceNotes'    => $row['experience_notes'],
+            'relevantHighlights' => $fromJsonColumn($row['experience_highlights']),
+            'gaps'               => $fromJsonColumn($row['experience_gaps']),
+        ],
+        'education' => [
+            'required'         => $row['education_required'],
+            'detected'         => $row['education_detected'],
+            'meetsRequirement' => (bool) $row['education_meets_requirement'],
+        ],
+        'recommendations'   => $fromJsonColumn($row['recommendations']),
+        'formattingIssues'  => $fromJsonColumn($row['formatting_issues']),
+    ];
+
+    $checkedAtOverride = $row['created_at']; // real timestamp, not "just now"
+} else {
+    $live = $_SESSION['last_analysis'] ?? null;
+}
 
 if ($live) {
-    $jobTitle  = $live['jobTitle'] ?? 'This Role';
+    $jobTitle  = $live['jobTitle'] ?? '';
     $company   = $live['company'] ?? '';
-    $checkedAt = 'Checked just now';
+    $checkedAt = isset($checkedAtOverride) ? date('M j, Y', strtotime($checkedAtOverride)) : 'Checked just now';
 
     $matchScore = (int) ($live['matchScore'] ?? 0);
     $verdict    = $live['verdict'] ?? 'Weak Match'; // Strong Match | Moderate Match | Weak Match | Poor Match
