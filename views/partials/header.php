@@ -99,20 +99,29 @@ $initial     = strtoupper(substr($displayName, 0, 1) ?: 'U');
     </button>
   </div>
 
+  <!-- Overlay behind mobile dropdown -->
+  <div
+    id="mobileMenuOverlay"
+    class="md:hidden hidden fixed inset-0 bg-black/40 z-30"
+  ></div>
+
   <!-- Mobile dropdown panel -->
   <nav
     id="mobileMenu"
-    class="md:hidden hidden flex-col px-6 pb-4 text-sm font-medium text-gray-700"
+    class="md:hidden hidden flex-col absolute top-full left-0 right-0 mx-4 mt-2 rounded-xl bg-white border border-gray-200 shadow-lg px-6 py-2 text-sm font-medium text-gray-700 z-40"
   >
-    <a
-      href="/"
-      class="py-3 border-t border-gray-200/70 <?= $isHome ? 'text-gray-900 font-semibold' : '' ?>"
-      <?= $isHome ? 'aria-current="page"' : '' ?>
-    >New Check</a>
-    <a href="/history" class="py-3 border-t border-gray-200/70">History</a>
+    <div class="flex flex-col">
+        <a
+        href="/"
+        class="py-3 <?= $isHome ? 'text-gray-900 font-semibold' : '' ?>"
+        <?= $isHome ? 'aria-current="page"' : '' ?>
+      >New Check</a>
+      <a href="/history" class="py-3 border-t border-gray-200">History</a>
 
+   </div>
+    
     <?php if ($isAuthenticated): ?>
-      <div class="py-3 border-t border-gray-200/70">
+      <div class="py-3 border-t border-gray-200">
         <div class="flex items-center gap-3 mb-3">
           <span class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-900 text-white text-xs font-semibold shrink-0">
             <?= htmlspecialchars($initial, ENT_QUOTES) ?>
@@ -127,7 +136,7 @@ $initial     = strtoupper(substr($displayName, 0, 1) ?: 'U');
         <form action="/api/auth/logout.php" method="POST">
           <button
             type="submit"
-            class="w-full flex items-center gap-2 text-red-600 font-medium"
+            class="w-full flex items-center gap-2 text-red-600 font-medium pb-1"
           >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -139,7 +148,7 @@ $initial     = strtoupper(substr($displayName, 0, 1) ?: 'U');
     <?php else: ?>
       <a
         href="/signin"
-        class="py-3 border-t border-gray-200/70 flex items-center gap-1.5"
+        class="py-3 border-t border-gray-200 flex items-center gap-1.5"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/>
