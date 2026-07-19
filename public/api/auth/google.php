@@ -1,5 +1,7 @@
 <?php
 
+session_start();
+
 require_once __DIR__ . '/../../../vendor/autoload.php';
 require_once __DIR__ . '/../lib/db.php';
 
@@ -9,7 +11,6 @@ $dotenv = Dotenv::createImmutable(__DIR__ . '/../../../');
 $dotenv->safeLoad();
 
 header('Content-Type: application/json');
-session_start();
 
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -55,7 +56,7 @@ try {
     $_SESSION['user_id'] = $userId;
     $_SESSION['email']   = $email;
     $_SESSION['name']    = $name;
-
+    error_log('[DEBUG google.php] session id=' . session_id() . ' data=' . json_encode($_SESSION));
     echo json_encode([
         'status' => 'success',
         'user'   => ['id' => $userId, 'email' => $email, 'name' => $name],

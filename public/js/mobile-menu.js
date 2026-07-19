@@ -23,3 +23,37 @@
     }
   });
 })();
+
+// Desktop profile dropdown (Sign in / Account menu)
+(function () {
+  const wrap = document.getElementById('profileMenuWrap');
+  const toggle = document.getElementById('profileMenuToggle');
+  const menu = document.getElementById('profileMenu');
+  if (!wrap || !toggle || !menu) return;
+
+  function closeMenu() {
+    menu.classList.add('hidden');
+    toggle.setAttribute('aria-expanded', 'false');
+  }
+
+  function openMenu() {
+    menu.classList.remove('hidden');
+    toggle.setAttribute('aria-expanded', 'true');
+  }
+
+  toggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+    isOpen ? closeMenu() : openMenu();
+  });
+
+  // Click outside closes it
+  document.addEventListener('click', function (e) {
+    if (!wrap.contains(e.target)) closeMenu();
+  });
+
+  // Escape closes it
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeMenu();
+  });
+})();

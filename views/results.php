@@ -28,8 +28,6 @@
  * static/hardcoded example so the page still renders standalone.
  */
 
-session_start();
-
 // ---------------------------------------------------------------------
 // DATA — live session data if present, else static fallback
 // ---------------------------------------------------------------------

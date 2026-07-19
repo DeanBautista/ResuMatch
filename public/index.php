@@ -1,5 +1,6 @@
 <?php
-
+session_start();
+error_log('[DEBUG] session id=' . session_id() . ' data=' . json_encode($_SESSION));
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Admin\ResuMatch\Router;

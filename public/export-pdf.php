@@ -205,7 +205,7 @@ ob_start();
 <html>
 <head>
 <meta charset="UTF-8">
-<?php include __DIR__ . '/../views/partials/pdf/pdf-styles.php'; ?>
+<?php include __DIR__ . '/pdf/pdf-styles.php'; ?>
 </head>
 <body>
     <div class="pdf-header">

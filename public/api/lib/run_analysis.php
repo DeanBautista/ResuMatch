@@ -34,6 +34,14 @@ function runResumeAnalysis(string $resumeText, string $jobDescription, string $j
         ];
     }
 
+    // Trim so we can reliably tell "not provided" apart from a real value
+    // when deciding whether to trust the model's own extraction below.
+    $jobTitle = trim($jobTitle);
+    $company  = trim($company);
+
+    $jobTitleLine = $jobTitle !== '' ? $jobTitle : '(not provided — extract from job description if possible)';
+    $companyLine  = $company  !== '' ? $company  : '(not provided — extract from job description if possible)';
+
     $prompt = <<<PROMPT
 You are an expert ATS (Applicant Tracking System) analyst and technical
 recruiter with 15 years of experience screening resumes against job
@@ -61,12 +69,34 @@ If EITHER field is invalid by these criteria:
     ([...]) to an empty array. Do NOT invent scores, skills, strengths,
     gaps, or recommendations for invalid input — leave subScores at 0 and
     string fields (other than invalidInputReason) as null.
+  - Set "extractedJobTitle" and "extractedCompany" to null as well.
   - Still output the full JSON shape below so the response is well-formed,
     just with these placeholder/zeroed values.
 
 If BOTH fields are valid, real resume/JD content, set "isValidInput" to
 true, "invalidInputReason" to null, and proceed with the full rubric and
 ground rules below as normal.
+
+============================================================
+JOB TITLE / COMPANY EXTRACTION
+============================================================
+The caller may or may not supply a job title and company name explicitly
+(see JOB TITLE / COMPANY below). Regardless of what is supplied:
+  - Set "extractedJobTitle" to the job title as stated in the JOB
+    DESCRIPTION text (e.g. from a heading, "Job Title:" line, or the first
+    sentence). If JOB TITLE was already provided to you (not the
+    placeholder "(not provided...)"), you may use it to confirm, but still
+    report what the JD itself says — they should usually match. If the JD
+    does not state a job title anywhere, set this to null.
+  - Set "extractedCompany" to the company/organization name as stated in
+    the JOB DESCRIPTION text (e.g. "About Us", "About [Company]", a
+    letterhead-style mention, or "at Acme Corp we..."). If COMPANY was
+    already provided to you, you may use it to confirm, but still report
+    what the JD itself says. If the JD does not name a company anywhere
+    (e.g. it's an anonymized posting, or just says "our company"), set
+    this to null — do not guess or invent a name.
+  - These two fields are extractions from the JD text only. Do not pull a
+    company or title from the RESUME.
 
 ============================================================
 SCORING RUBRIC (use this to compute matchScore and subScores — only if isValidInput is true)
@@ -139,6 +169,9 @@ OUTPUT JSON SHAPE (produce exactly this structure)
   "isValidInput": <boolean — false if RESUME or JOB DESCRIPTION is not real, substantive content>,
   "invalidInputReason": "<string explaining what's wrong, or null if isValidInput is true>",
 
+  "extractedJobTitle": "<job title as found in the JOB DESCRIPTION text, or null if not stated>",
+  "extractedCompany": "<company name as found in the JOB DESCRIPTION text, or null if not stated>",
+
   "matchScore": <integer 0-100>,
   "verdict": "<Strong Match|Moderate Match|Weak Match|Poor Match>",
   "summary": "<2-3 sentence plain-language take on overall fit>",
@@ -192,8 +225,8 @@ OUTPUT JSON SHAPE (produce exactly this structure)
 }
 
 ============================================================
-JOB TITLE (if provided): {$jobTitle}
-COMPANY (if provided): {$company}
+JOB TITLE (if provided): {$jobTitleLine}
+COMPANY (if provided): {$companyLine}
 
 RESUME:
 {$resumeText}
@@ -287,8 +320,19 @@ PROMPT;
     }
 
     if (is_array($parsed)) {
-        $parsed['jobTitle'] = $jobTitle;
-        $parsed['company']  = $company;
+        // Prefer the caller-supplied job title/company when present (the
+        // person typed them in explicitly); otherwise fall back to what
+        // the model extracted from the JD text itself.
+        $extractedJobTitle = $parsed['extractedJobTitle'] ?? null;
+        $extractedCompany  = $parsed['extractedCompany']  ?? null;
+
+        $parsed['jobTitle'] = $jobTitle !== '' ? $jobTitle : $extractedJobTitle;
+        $parsed['company']  = $company  !== '' ? $company  : $extractedCompany;
+
+        // Keep the raw extraction around too, in case the UI wants to show
+        // "detected from job description" separately from the final value.
+        $parsed['extractedJobTitle'] = $extractedJobTitle;
+        $parsed['extractedCompany']  = $extractedCompany;
     }
 
     // If the model itself determined the resume/JD wasn't real, substantive
@@ -314,8 +358,8 @@ PROMPT;
     $_SESSION['last_analysis_input'] = [
         'resumeText'     => $resumeText,
         'jobDescription' => $jobDescription,
-        'jobTitle'       => $jobTitle,
-        'company'        => $company,
+        'jobTitle'       => $parsed['jobTitle'] ?? $jobTitle,
+        'company'        => $parsed['company'] ?? $company,
     ];
 
     return [
