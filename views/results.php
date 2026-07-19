@@ -29,17 +29,17 @@
  *      '/' (matches index.php's existing behavior for invalid access).
  *   2. /results (no id) — $_SESSION['last_analysis'], set by
  *      lib/run_analysis.php right before redirecting here from a fresh
- *      analyze.php/rerun.php run. Unchanged from before.
- *   3. Neither present — static/hardcoded fallback so the page still
- *      renders standalone during development. Unchanged from before.
+ *      analyze.php/rerun.php run. If it's not set, there's nothing real to
+ *      show, so redirect to '/' instead of rendering placeholder data.
  */
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../public/api/lib/db.php';
 
 // ---------------------------------------------------------------------
-// DATA — DB row (by id) if present, else live session data, else static
-// fallback
+// DATA — DB row (by id) if present, else live session data. If neither
+// is available there is nothing real to render, so we redirect home
+// rather than ever showing placeholder/fixture data.
 // ---------------------------------------------------------------------
 $routeId = $GLOBALS['routeParams']['id'] ?? null;
 $live    = null;
@@ -126,158 +126,105 @@ if ($routeId !== null) {
         ],
         'recommendations'   => $fromJsonColumn($row['recommendations']),
         'formattingIssues'  => $fromJsonColumn($row['formatting_issues']),
+        // Not currently persisted — match_history has no job_description
+        // column yet, so this is null for history rows until that's added.
+        // Left here so the rest of the page (and the JD panel) works
+        // unmodified the moment it's populated from $row['job_description'].
+        'jobDescription'    => $row['job_description'] ?? null,
     ];
 
     $checkedAtOverride = $row['created_at']; // real timestamp, not "just now"
 } else {
     $live = $_SESSION['last_analysis'] ?? null;
+
+    if (!$live) {
+        // Plain /results with nothing in session — no real analysis to
+        // show. Redirect home instead of rendering fixture/placeholder
+        // data.
+        header('Location: /');
+        exit;
+    }
+
+    // run_analysis.php stores the JD text separately, in
+    // last_analysis_input (alongside resumeText), not on $parsed itself —
+    // fold it into $live so the rest of this file only has one shape to
+    // deal with regardless of source.
+    $live['jobDescription'] = $_SESSION['last_analysis_input']['jobDescription'] ?? null;
 }
 
-if ($live) {
-    $jobTitle  = $live['jobTitle'] ?? '';
-    $company   = $live['company'] ?? '';
-    $checkedAt = isset($checkedAtOverride) ? date('M j, Y', strtotime($checkedAtOverride)) : 'Checked just now';
+// $live is guaranteed to be set past this point: either reassembled from
+// the DB row above, or pulled from session — both branches redirect away
+// (and exit) if they don't have real data.
+$jobTitle  = $live['jobTitle'] ?? '';
+$company   = $live['company'] ?? '';
+$checkedAt = isset($checkedAtOverride) ? date('M j, Y', strtotime($checkedAtOverride)) : 'Checked just now';
 
-    $matchScore = (int) ($live['matchScore'] ?? 0);
-    $verdict    = $live['verdict'] ?? 'Weak Match'; // Strong Match | Moderate Match | Weak Match | Poor Match
-    $summary    = $live['summary'] ?? ''; // pre-sanitized server-side (analyze.php) before storage
-
-    $subScores = [
-        'skills'     => (int) ($live['subScores']['skills']     ?? 0),
-        'experience' => (int) ($live['subScores']['experience'] ?? 0),
-        'education'  => (int) ($live['subScores']['education']  ?? 0),
-        'keywords'   => (int) ($live['subScores']['keywords']   ?? 0),
-    ];
-
-    $strengths = $live['strengths'] ?? [];
-    $gaps      = $live['gaps'] ?? [];
-
-    // Mirrors analyze.php's `skills` object exactly:
-    //   skills.matched / skills.missingRequired / skills.missingPreferred
-    $skills = [
-        'matched'          => $live['skills']['matched'] ?? [],
-        'missingRequired'  => $live['skills']['missingRequired'] ?? [],
-        'missingPreferred' => $live['skills']['missingPreferred'] ?? [],
-    ];
-
-    // Mirrors analyze.php's `atsKeywords` object exactly:
-    //   atsKeywords.missing[]   -> { keyword, jdFrequency }
-    //   atsKeywords.underused[] -> { keyword, resumeCount, jdFrequency }
-    $atsKeywords = [
-        'missing'   => $live['atsKeywords']['missing'] ?? [],
-        'underused' => $live['atsKeywords']['underused'] ?? [],
-    ];
-
-    // Mirrors analyze.php's `experience` object exactly:
-    //   experience.requiredYears / detectedYears / experienceNotes /
-    //   experience.relevantHighlights[] / experience.gaps[]
-    $experience = [
-        'requiredYears'      => $live['experience']['requiredYears'] ?? 0,
-        'detectedYears'      => $live['experience']['detectedYears'] ?? 0,
-        'experienceNotes'    => $live['experience']['experienceNotes'] ?? '',
-        'relevantHighlights' => $live['experience']['relevantHighlights'] ?? [],
-        'gaps'               => $live['experience']['gaps'] ?? [],
-    ];
-
-    // Mirrors analyze.php's `education` object exactly:
-    //   education.required / education.detected / education.meetsRequirement
-    $education = [
-        'required'         => $live['education']['required'] ?? '',
-        'detected'         => $live['education']['detected'] ?? '',
-        'meetsRequirement' => $live['education']['meetsRequirement'] ?? false,
-    ];
-
-    // Mirrors analyze.php's `recommendations[]` exactly:
-    //   recommendations[].action / recommendations[].section
-    $recommendations = $live['recommendations'] ?? [];
-
-    // Mirrors analyze.php's `formattingIssues[]` exactly:
-    //   formattingIssues[].message / formattingIssues[].severity
-    $formattingIssues = $live['formattingIssues'] ?? [];
-} else {
-    // ---------------------------------------------------------------------
-    // STATIC FALLBACK DATA (shape mirrors the Gemini JSON response from
-    // analyze.php) — used only when /results is loaded with no analysis
-    // in session, so the page still renders standalone during development.
-    // ---------------------------------------------------------------------
-    $jobTitle  = 'Senior Product Designer';
-    $company   = 'Acme Co.';
-    $checkedAt = 'Checked just now';
-
-    $matchScore = 84;
-    $verdict    = 'Strong Match';
-    $summary    = 'Your experience aligns well with the core requirements, particularly in <strong>design systems</strong> and <strong>prototyping</strong>. Minor gaps detected in specific management tools.';
-
-    $subScores = [
-        'skills'     => 90,
-        'experience' => 85,
-        'education'  => 100,
-        'keywords'   => 72,
-    ];
-
-    $strengths = [
-        'Strong evidence of <strong>Design Systems</strong> management (5+ years).',
-        'Direct match for required <strong>Figma</strong> and prototyping skills.',
-    ];
-
-    $gaps = [
-        'Missing explicit mention of <strong>Agile/Scrum</strong> methodologies.',
-        'No direct experience listed for <strong>Jira</strong> or tracking tools.',
-    ];
-
-    $skills = [
-        'matched'          => ['Figma', 'Design Systems', 'Prototyping', 'UI Design'],
-        'missingRequired'  => ['Agile/Scrum', 'Jira', 'User Research'],
-        'missingPreferred' => ['React', 'Motion Design'],
-    ];
-
-    $atsKeywords = [
-        'missing' => [
-            ['keyword' => 'Design Systems', 'jdFrequency' => 4],
-            ['keyword' => 'Accessibility',  'jdFrequency' => 2],
-        ],
-        'underused' => [
-            ['keyword' => 'Prototyping', 'resumeCount' => 1, 'jdFrequency' => 3],
-        ],
-    ];
-
-    $experience = [
-        'requiredYears'      => 5,
-        'detectedYears'      => 4,
-        'experienceNotes'    => '',
-        'relevantHighlights' => [
-            '3 years at Tier-1 tech companies',
-            'Led design for 2 major product launches',
-        ],
-        'gaps' => [
-            'Short of 5-year senior requirement',
-            'No direct Fintech sector experience',
-        ],
-    ];
-
-    $education = [
-        'required'         => "Bachelor's in Design",
-        'detected'         => "Bachelor's in Design",
-        'meetsRequirement' => true,
-    ];
-
-    $recommendations = [
-        ['action' => "Add 'Stakeholder Management' and 'User Research' to your skills section", 'section' => 'Skills'],
-        ['action' => 'Quantify your impact at Acme Co with specific metrics (e.g., % growth)', 'section' => 'Experience'],
-        ['action' => 'Ensure your job titles match the JD keywords where appropriate', 'section' => 'Experience'],
-        ['action' => "Remove the 'References available upon request' section to save space", 'section' => 'Formatting'],
-        ['action' => "Update your location to 'Remote' or 'New York, NY' to match requirements", 'section' => 'Contact Info'],
-    ];
-
-    $formattingIssues = [
-        ['message' => '2-column layout detected: some ATS systems may struggle with reading order.', 'severity' => 'warning'],
-        ['message' => 'Non-standard font: Ensure you use web-safe fonts for optimal parsing.', 'severity' => 'info'],
-        ['message' => 'Missing contact information: your phone number was not detected.', 'severity' => 'warning'],
-    ];
+// Null (not just empty string) when unavailable, so the panel can tell
+// "not stored for this check" apart from "stored but blank".
+$jobDescription = $live['jobDescription'] ?? null;
+if ($jobDescription === '') {
+    $jobDescription = null;
 }
+
+$matchScore = (int) ($live['matchScore'] ?? 0);
+$verdict    = $live['verdict'] ?? 'Weak Match'; // Strong Match | Moderate Match | Weak Match | Poor Match
+$summary    = $live['summary'] ?? ''; // pre-sanitized server-side (analyze.php) before storage
+
+$subScores = [
+    'skills'     => (int) ($live['subScores']['skills']     ?? 0),
+    'experience' => (int) ($live['subScores']['experience'] ?? 0),
+    'education'  => (int) ($live['subScores']['education']  ?? 0),
+    'keywords'   => (int) ($live['subScores']['keywords']   ?? 0),
+];
+
+$strengths = $live['strengths'] ?? [];
+$gaps      = $live['gaps'] ?? [];
+
+// Mirrors analyze.php's `skills` object exactly:
+//   skills.matched / skills.missingRequired / skills.missingPreferred
+$skills = [
+    'matched'          => $live['skills']['matched'] ?? [],
+    'missingRequired'  => $live['skills']['missingRequired'] ?? [],
+    'missingPreferred' => $live['skills']['missingPreferred'] ?? [],
+];
+
+// Mirrors analyze.php's `atsKeywords` object exactly:
+//   atsKeywords.missing[]   -> { keyword, jdFrequency }
+//   atsKeywords.underused[] -> { keyword, resumeCount, jdFrequency }
+$atsKeywords = [
+    'missing'   => $live['atsKeywords']['missing'] ?? [],
+    'underused' => $live['atsKeywords']['underused'] ?? [],
+];
+
+// Mirrors analyze.php's `experience` object exactly:
+//   experience.requiredYears / detectedYears / experienceNotes /
+//   experience.relevantHighlights[] / experience.gaps[]
+$experience = [
+    'requiredYears'      => $live['experience']['requiredYears'] ?? 0,
+    'detectedYears'      => $live['experience']['detectedYears'] ?? 0,
+    'experienceNotes'    => $live['experience']['experienceNotes'] ?? '',
+    'relevantHighlights' => $live['experience']['relevantHighlights'] ?? [],
+    'gaps'               => $live['experience']['gaps'] ?? [],
+];
+
+// Mirrors analyze.php's `education` object exactly:
+//   education.required / education.detected / education.meetsRequirement
+$education = [
+    'required'         => $live['education']['required'] ?? '',
+    'detected'         => $live['education']['detected'] ?? '',
+    'meetsRequirement' => $live['education']['meetsRequirement'] ?? false,
+];
+
+// Mirrors analyze.php's `recommendations[]` exactly:
+//   recommendations[].action / recommendations[].section
+$recommendations = $live['recommendations'] ?? [];
+
+// Mirrors analyze.php's `formattingIssues[]` exactly:
+//   formattingIssues[].message / formattingIssues[].severity
+$formattingIssues = $live['formattingIssues'] ?? [];
 
 // ---------------------------------------------------------------------
-// DERIVED / CONDITIONAL LOGIC (applies to both live and fallback data)
+// DERIVED / CONDITIONAL LOGIC
 // ---------------------------------------------------------------------
 
 // Verdict badge color follows the same score bands used server-side in
@@ -375,6 +322,9 @@ $keywordHighPriorityThreshold = 3;
     <div data-reveal-group="recommendations">
         <?php include 'partials/results-recommendations.php'; ?>
     </div>
+
+    <!-- ================= JOB DESCRIPTION (floating button + panel) ================= -->
+    <?php include 'partials/results-jd-panel.php'; ?>
 
 </main>
 
