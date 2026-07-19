@@ -74,7 +74,7 @@ try {
 
     $history = array_map(function ($row) {
         return [
-            'id'         => (int) $row['id'],
+            'id'         => $row['id'],
             'jobTitle'   => $row['job_title'],
             'company'    => $row['company'],
             'matchScore' => $row['match_score'] !== null ? (int) $row['match_score'] : null,

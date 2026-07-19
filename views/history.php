@@ -48,7 +48,7 @@
         </svg>
       </button>
 
-      <div id="sortDropdownMenu" class="hidden absolute right-0 mt-2 w-full sm:w-48 bg-white border border-gray-200 rounded-xl shadow-[0_8px_24px_rgba(30,64,175,0.12)] z-10 overflow-hidden">
+      <div id="sortDropdownMenu" class="hidden absolute right-0 mt-2 w-full sm:w-48 bg-white border border-gray-200 rounded-xl shadow-[0_8px_24px_rgba(30,64,175,0.12)] z-20 overflow-hidden">
         <button type="button" class="sort-option w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition" data-value="recent">Most recent</button>
         <button type="button" class="sort-option w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition" data-value="oldest">Oldest</button>
         <button type="button" class="sort-option w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition" data-value="highest">Highest match</button>

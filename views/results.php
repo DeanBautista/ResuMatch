@@ -53,16 +53,11 @@ if ($routeId !== null) {
         exit;
     }
 
-    if (!ctype_digit((string) $routeId)) {
-        header('Location: /');
-        exit;
-    }
-
     try {
         $pdo = getPDO();
         $stmt = $pdo->prepare('SELECT * FROM match_history WHERE id = :id AND user_id = :user_id LIMIT 1');
         $stmt->execute([
-            ':id'      => (int) $routeId,
+            ':id'      => $routeId,
             ':user_id' => $_SESSION['user_id'],
         ]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
