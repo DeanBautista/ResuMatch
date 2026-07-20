@@ -67,7 +67,7 @@ try {
 
     $stmt = $pdo->prepare('DELETE FROM match_history WHERE id = :id AND user_id = :user_id');
     $stmt->execute([
-        ':id'      => (int) $id,
+        ':id'      => $id,
         ':user_id' => $userId,
     ]);
 
