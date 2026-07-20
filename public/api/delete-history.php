@@ -56,7 +56,7 @@ $userId = $_SESSION['user_id'];
 $body = json_decode(file_get_contents('php://input'), true);
 $id   = $body['id'] ?? null;
 
-if (!is_numeric($id)) {
+if (!is_string($id) || !preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id)) {
     http_response_code(400);
     echo json_encode(['ok' => false, 'error' => 'A valid id is required.']);
     exit;
