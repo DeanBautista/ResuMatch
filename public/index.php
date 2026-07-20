@@ -13,6 +13,13 @@ use Dotenv\Dotenv;
 $dotenv = Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->safeLoad();
 
+// TEMP DEBUG - remove after testing
+echo '<pre>';
+echo 'ASSET_BASE: ' . ($_ENV['ASSET_BASE'] ?? 'NOT SET') . "\n";
+echo 'ENV FILE EXISTS: ' . (file_exists(__DIR__ . '/../.env') ? 'YES' : 'NO') . "\n";
+echo '</pre>';
+exit;
+
 // Make the current path available globally for views (e.g. header.php)
 $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $GLOBALS['currentPath'] = $currentPath;
