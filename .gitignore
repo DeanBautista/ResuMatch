@@ -3,3 +3,4 @@ composer.lock
 tailwindcss.exe
 .env
 .env.example
+node_modules
