@@ -90,4 +90,4 @@ $hasJd = $jobDescription !== null && trim($jobDescription) !== '';
     </div>
 </aside>
 
-<script src="/js/results/results-jd-panel.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/results/results-jd-panel.js"></script>

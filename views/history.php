@@ -101,9 +101,9 @@
 <?php include 'partials/toast.php'; ?>
 <?php include 'partials/loading-overlay.php'; ?>
 
-<script src="/js/toast.js"></script>
-<script src="/js/loading-overlay.js"></script>
-<script src="/js/history/history-page.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/toast.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/loading-overlay.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/history/history-page.js"></script>
 
 </body>
 </html>

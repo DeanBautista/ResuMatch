@@ -111,4 +111,4 @@ if ($hasTitle && $hasCompany) {
   </div>
 </div>
 
-<script src="/js/results/rerun-check.js" defer></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/results/rerun-check.js" defer></script>

@@ -61,13 +61,13 @@
 <?php include 'partials/toast.php'; ?>
 <?php include 'partials/loading-overlay.php'; ?>
 
-<script src="/js/toast.js"></script>
-<script src="/js/loading-overlay.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/toast.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/loading-overlay.js"></script>
 <script>
   window.GOOGLE_CLIENT_ID = "<?= htmlspecialchars($_ENV['GOOGLE_CLIENT_ID'] ?? '', ENT_QUOTES) ?>";
 </script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="/js/auth/google-oauth.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/auth/google-oauth.js"></script>
 
 </body>
 </html>

@@ -159,4 +159,4 @@ $initial     = strtoupper(substr($displayName, 0, 1) ?: 'U');
   </nav>
 </header>
 
-<script src="/js/mobile-menu.js" defer></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/mobile-menu.js" defer></script>

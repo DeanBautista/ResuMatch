@@ -119,4 +119,4 @@ function formattingIssueStyle(string $severity): array
     </div>
 </section>
 
-<script src="/js/results/results-recommendations.js" defer></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/results/results-recommendations.js" defer></script>

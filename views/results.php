@@ -342,9 +342,9 @@ $keywordHighPriorityThreshold = 3;
 <?php include 'partials/toast.php'; ?>
 <?php include 'partials/loading-overlay.php'; ?>
 
-<script src="/js/toast.js"></script>
-<script src="/js/loading-overlay.js"></script>
-<script src="/js/scroll-reveal.js" defer></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/toast.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/loading-overlay.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/scroll-reveal.js" defer></script>
 
 </body>
 </html>

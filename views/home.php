@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Match</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="/css/animations.css">
+<link rel="stylesheet" href="<?= $GLOBALS['assetBase'] ?>/css/animations.css">
 </head>
 <body class="min-h-screen bg-[radial-gradient(circle_at_15%_-10%,#cfe0fb_0%,transparent_45%),radial-gradient(circle_at_100%_0%,#e3edfd_0%,transparent_50%),linear-gradient(160deg,#dbeafe_0%,#eaf3fd_45%,#f3f8fe_100%)] bg-fixed">
 
@@ -146,8 +146,8 @@
 <?php include 'partials/toast.php'; ?>
 <?php include 'partials/loading-overlay.php'; ?>
 
-<script src="/js/toast.js"></script>
-<script src="/js/home/dropzone-upload.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/toast.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/home/dropzone-upload.js"></script>
 
 <!-- Resume text extraction (PDF.js + Mammoth.js) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -156,8 +156,8 @@
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.7.0/mammoth.browser.min.js"></script>
-<script src="/js/loading-overlay.js"></script>
-<script src="/js/home/resume-extract.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/loading-overlay.js"></script>
+<script src="<?= $GLOBALS['assetBase'] ?>/js/home/resume-extract.js"></script>
 
 </body>
 </html>
