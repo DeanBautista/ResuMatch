@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const id = parseInt(btn.dataset.id, 10);
+        const id = btn.dataset.id;
         openDeleteModal(id);
       });
     });
