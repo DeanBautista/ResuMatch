@@ -1,4 +1,17 @@
 RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+
+<Files ".env">
+    Require all denied
+</Files>
+
+# 1. Real files/folders — serve as-is, don't touch
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 2. Static assets that exist inside /public — serve them from there
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
 RewriteRule ^(.*)$ public/$1 [L]
+
+# 3. Everything else (app routes like /results, /history) — hand off to index.php
+RewriteRule ^ index.php [L]
