@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="#4F46E5"/>
+
+  <!-- Document body with folded corner -->
+  <path d="M18 12 H38 L48 22 V52 A4 4 0 0 1 44 56 H18 A4 4 0 0 1 14 52 V16 A4 4 0 0 1 18 12 Z"
+        fill="#FFFFFF"/>
+
+  <!-- Folded corner shading -->
+  <path d="M38 12 L48 22 H40 A2 2 0 0 1 38 20 Z" fill="#C7D2FE"/>
+
+  <!-- Text lines -->
+  <rect x="20" y="30" width="20" height="3" rx="1.5" fill="#4F46E5"/>
+  <rect x="20" y="37" width="20" height="3" rx="1.5" fill="#4F46E5"/>
+  <rect x="20" y="44" width="13" height="3" rx="1.5" fill="#4F46E5"/>
+</svg>

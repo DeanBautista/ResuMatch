@@ -154,74 +154,77 @@ if ($routeId !== null) {
 
 // $live is guaranteed to be set past this point: either reassembled from
 // the DB row above, or pulled from session — both branches redirect away
-// (and exit) if they don't have real data.
-$jobTitle  = $live['jobTitle'] ?? '';
-$company   = $live['company'] ?? '';
+// (and exit) if they don't have real data. Its sub-fields are trusted to
+// match the shape analyze.php / run_analysis.php / the DB reassembly above
+// produce exactly, so nothing below applies a fallback default — a missing
+// key here means an upstream shape mismatch, not a value to paper over.
+$jobTitle  = $live['jobTitle'];
+$company   = $live['company'];
 $checkedAt = isset($checkedAtOverride) ? date('M j, Y', strtotime($checkedAtOverride)) : 'Checked just now';
 
 // Null (not just empty string) when unavailable, so the panel can tell
 // "not stored for this check" apart from "stored but blank".
-$jobDescription = $live['jobDescription'] ?? null;
+$jobDescription = $live['jobDescription'];
 if ($jobDescription === '') {
     $jobDescription = null;
 }
 
-$matchScore = (int) ($live['matchScore'] ?? 0);
-$verdict    = $live['verdict'] ?? 'Weak Match'; // Strong Match | Moderate Match | Weak Match | Poor Match
-$summary    = $live['summary'] ?? ''; // pre-sanitized server-side (analyze.php) before storage
+$matchScore = (int) $live['matchScore'];
+$verdict    = $live['verdict']; // Strong Match | Moderate Match | Weak Match | Poor Match
+$summary    = $live['summary']; // pre-sanitized server-side (analyze.php) before storage
 
 $subScores = [
-    'skills'     => (int) ($live['subScores']['skills']     ?? 0),
-    'experience' => (int) ($live['subScores']['experience'] ?? 0),
-    'education'  => (int) ($live['subScores']['education']  ?? 0),
-    'keywords'   => (int) ($live['subScores']['keywords']   ?? 0),
+    'skills'     => (int) $live['subScores']['skills'],
+    'experience' => (int) $live['subScores']['experience'],
+    'education'  => (int) $live['subScores']['education'],
+    'keywords'   => (int) $live['subScores']['keywords'],
 ];
 
-$strengths = $live['strengths'] ?? [];
-$gaps      = $live['gaps'] ?? [];
+$strengths = $live['strengths'];
+$gaps      = $live['gaps'];
 
 // Mirrors analyze.php's `skills` object exactly:
 //   skills.matched / skills.missingRequired / skills.missingPreferred
 $skills = [
-    'matched'          => $live['skills']['matched'] ?? [],
-    'missingRequired'  => $live['skills']['missingRequired'] ?? [],
-    'missingPreferred' => $live['skills']['missingPreferred'] ?? [],
+    'matched'          => $live['skills']['matched'],
+    'missingRequired'  => $live['skills']['missingRequired'],
+    'missingPreferred' => $live['skills']['missingPreferred'],
 ];
 
 // Mirrors analyze.php's `atsKeywords` object exactly:
 //   atsKeywords.missing[]   -> { keyword, jdFrequency }
 //   atsKeywords.underused[] -> { keyword, resumeCount, jdFrequency }
 $atsKeywords = [
-    'missing'   => $live['atsKeywords']['missing'] ?? [],
-    'underused' => $live['atsKeywords']['underused'] ?? [],
+    'missing'   => $live['atsKeywords']['missing'],
+    'underused' => $live['atsKeywords']['underused'],
 ];
 
 // Mirrors analyze.php's `experience` object exactly:
 //   experience.requiredYears / detectedYears / experienceNotes /
 //   experience.relevantHighlights[] / experience.gaps[]
 $experience = [
-    'requiredYears'      => $live['experience']['requiredYears'] ?? 0,
-    'detectedYears'      => $live['experience']['detectedYears'] ?? 0,
-    'experienceNotes'    => $live['experience']['experienceNotes'] ?? '',
-    'relevantHighlights' => $live['experience']['relevantHighlights'] ?? [],
-    'gaps'               => $live['experience']['gaps'] ?? [],
+    'requiredYears'      => $live['experience']['requiredYears'],
+    'detectedYears'      => $live['experience']['detectedYears'],
+    'experienceNotes'    => $live['experience']['experienceNotes'],
+    'relevantHighlights' => $live['experience']['relevantHighlights'],
+    'gaps'               => $live['experience']['gaps'],
 ];
 
 // Mirrors analyze.php's `education` object exactly:
 //   education.required / education.detected / education.meetsRequirement
 $education = [
-    'required'         => $live['education']['required'] ?? '',
-    'detected'         => $live['education']['detected'] ?? '',
-    'meetsRequirement' => $live['education']['meetsRequirement'] ?? false,
+    'required'         => $live['education']['required'],
+    'detected'         => $live['education']['detected'],
+    'meetsRequirement' => (bool) $live['education']['meetsRequirement'],
 ];
 
 // Mirrors analyze.php's `recommendations[]` exactly:
 //   recommendations[].action / recommendations[].section
-$recommendations = $live['recommendations'] ?? [];
+$recommendations = $live['recommendations'];
 
 // Mirrors analyze.php's `formattingIssues[]` exactly:
 //   formattingIssues[].message / formattingIssues[].severity
-$formattingIssues = $live['formattingIssues'] ?? [];
+$formattingIssues = $live['formattingIssues'];
 
 // ---------------------------------------------------------------------
 // DERIVED / CONDITIONAL LOGIC
@@ -264,7 +267,8 @@ $keywordHighPriorityThreshold = 3;
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Match Results — <?= htmlspecialchars($jobTitle) ?></title>
+<link rel="icon" type="image/svg+xml" href="/site-icon.svg">
+<title>ResuMatch Results — <?= htmlspecialchars($jobTitle) ?></title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/animations.css">
 <link rel="stylesheet" href="/css/results-reveal.css">
