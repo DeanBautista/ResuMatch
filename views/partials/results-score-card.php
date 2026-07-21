@@ -8,8 +8,12 @@
  * Expects (set by results.php before including this file):
  *   int    $matchScore
  *   string $verdict        e.g. 'Strong Match'
- *   array  $verdictStyle   ['bg' => 'bg-lime-200', 'text' => 'text-lime-900']
  *   string $summary        may contain <strong> tags, must be pre-sanitized
+ *
+ * Verdict badge color ($verdictStyle) follows the same score bands used
+ * server-side in analyze.php's rubric (80-100 Strong, 60-79 Moderate,
+ * 40-59 Weak, 0-39 Poor) and is derived from $verdict locally below, since
+ * this card is the only place in the page that renders the verdict badge.
  *
  * Animation: the ring fills from empty to $matchScore and the number
  * counts up alongside it, driven by js/scroll-reveal.js the same way
@@ -18,6 +22,14 @@
  * restores it once the element is visible. See results-reveal.css
  * additions required, noted below.
  */
+
+$verdictStyles = [
+    'Strong Match'   => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
+    'Moderate Match' => ['bg' => 'bg-yellow-200', 'text' => 'text-yellow-900'],
+    'Weak Match'     => ['bg' => 'bg-orange-200', 'text' => 'text-orange-900'],
+    'Poor Match'     => ['bg' => 'bg-red-200', 'text' => 'text-red-900'],
+];
+$verdictStyle = $verdictStyles[$verdict] ?? $verdictStyles['Weak Match'];
 
 // Map the verdict's Tailwind bg class to a ring stroke color + soft track color.
 // Falls back to gray if a new/unmapped verdict color shows up.

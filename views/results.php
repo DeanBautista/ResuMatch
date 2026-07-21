@@ -226,41 +226,6 @@ $recommendations = $live['recommendations'];
 //   formattingIssues[].message / formattingIssues[].severity
 $formattingIssues = $live['formattingIssues'];
 
-// ---------------------------------------------------------------------
-// DERIVED / CONDITIONAL LOGIC
-// ---------------------------------------------------------------------
-
-// Verdict badge color follows the same score bands used server-side in
-// analyze.php's rubric (80-100 Strong, 60-79 Moderate, 40-59 Weak, 0-39 Poor).
-$verdictStyles = [
-    'Strong Match'   => ['bg' => 'bg-green-100', 'text' => 'text-green-700'],
-    'Moderate Match' => ['bg' => 'bg-yellow-200', 'text' => 'text-yellow-900'],
-    'Weak Match'     => ['bg' => 'bg-orange-200', 'text' => 'text-orange-900'],
-    'Poor Match'     => ['bg' => 'bg-red-200', 'text' => 'text-red-900'],
-];
-$verdictStyle = $verdictStyles[$verdict] ?? $verdictStyles['Weak Match'];
-
-// Each breakdown bar's fill color is conditional on its own score, not a
-// fixed color per row — a 72% keyword score should read as "attention
-// needed" even though skills/experience/education are strong.
-function scoreBarColor(int $score): string
-{
-    if ($score >= 80) return 'bg-green-500';
-    if ($score >= 60) return 'bg-orange-400';
-    return 'bg-red-500';
-}
-
-$breakdownRows = [
-    ['label' => 'Skills',     'value' => $subScores['skills']],
-    ['label' => 'Experience', 'value' => $subScores['experience']],
-    ['label' => 'Education',  'value' => $subScores['education']],
-    ['label' => 'Keywords',   'value' => $subScores['keywords']],
-];
-
-// jdFrequency at/above this = "HIGH PRIORITY" badge in the ATS keyword
-// list. Kept here (not inside the partial) so it's a single tunable knob
-// alongside the rest of the page's scoring config.
-$keywordHighPriorityThreshold = 3;
 ?>
 <!DOCTYPE html>
 <html lang="en">

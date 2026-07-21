@@ -4,7 +4,7 @@
  *
  * "Skills Breakdown" card — renders below the Strengths / Gaps section.
  *
- * Expects three variables to already be in scope (set in results.php,
+ * Expects two variables to already be in scope (set in results.php,
  * shaped to match /api/analyze.php's parsed Gemini response 1:1):
  *
  *   $skills = [
@@ -18,7 +18,9 @@
  *       'underused' => [ ['keyword' => <string>, 'resumeCount' => <int>, 'jdFrequency' => <int>], ... ],
  *   ];
  *
- *   $keywordHighPriorityThreshold = <int>  // jdFrequency >= this => "HIGH PRIORITY" badge
+ * $keywordHighPriorityThreshold (jdFrequency >= this => "HIGH PRIORITY"
+ * badge) is defined locally below rather than received from results.php,
+ * since this card is the only place it's used.
  *
  * Nothing about which keyword gets flagged as high priority, or what its
  * row text says, is hardcoded per-row — it's all derived below from the
@@ -26,7 +28,7 @@
  * decoded API response and this partial needs no changes.
  */
 
-$keywordHighPriorityThreshold = $keywordHighPriorityThreshold ?? 3;
+$keywordHighPriorityThreshold = 3;
 
 /**
  * Merge "missing" + "underused" ATS keywords into one normalized list for
@@ -80,8 +82,8 @@ $keywordRows = buildKeywordRows($atsKeywords, $keywordHighPriorityThreshold);
 
 /**
  * Pill style per skill category — same "derive style from category/score"
- * pattern as scoreBarColor() in results.php, kept local to this partial
- * since it's the only place skill pills render.
+ * pattern as scoreBarColor() in results-breakdown.php, kept local to this
+ * partial since it's the only place skill pills render.
  */
 function skillPillClasses(string $category): string
 {
